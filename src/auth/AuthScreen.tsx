@@ -9,13 +9,18 @@ import { FONT, Txt } from '@/components/ui';
 import { useProfileStore } from '@/state/profile';
 import { AppleButton } from './AppleButton';
 import { Aurora } from './Aurora';
-import { accent, radius, scaleType, size as metric, space, tracking, useLayout, useTheme, type as typeScale } from '@/theme';
-
-const BRAND_STOPS = [
-  { color: '#c4b5fd', to: 150 },
-  { color: '#6d28d9', to: 250 },
-  { color: '#3b1d8f', to: 360 },
-];
+import {
+  accent,
+  BRAND_STOPS,
+  radius,
+  scaleType,
+  size as metric,
+  space,
+  tracking,
+  useLayout,
+  useTheme,
+  type as typeScale,
+} from '@/theme';
 
 const HIGHLIGHTS = [
   { title: 'One canvas for the whole week', body: 'Plan, board, calendar, health and notes — a swipe apart.' },

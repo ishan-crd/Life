@@ -100,7 +100,7 @@ export function SheetProvider({ children }: { children: React.ReactNode }) {
         backgroundColor={t.card}
         borderRadius={radius.sheet}
         handleColor={t.btnLine}
-        backdropColor="rgba(4,4,6,0.62)"
+        backdropColor={t.scrim}
       >
         {spec ? (
           <View

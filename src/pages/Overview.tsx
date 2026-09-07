@@ -9,23 +9,23 @@ import { RiseIn } from '@/components/RiseIn';
 import { useSheet } from '@/components/Sheet';
 import { Touchable } from '@/components/Touchable';
 import { Card, GhostButton, Pill, RoundButton, Txt } from '@/components/ui';
-import { addDays, fmtShortDate, greetingFor, mmss, startOfWeek, to12h } from '@/lib/date';
+import { addDays, fmtDuration, fmtShortDate, greetingFor, keyOf, mmss, startOfWeek, to12h } from '@/lib/date';
 import { useNow } from '@/lib/useNow';
-import { firstName, useProfileStore } from '@/state/profile';
+import {
+  consistencySeries,
+  FOCUS_BANDS,
+  focusHeat,
+  focusMonth,
+  focusOn,
+  focusSeries,
+  focusStreak,
+  habitsLoggedOn,
+} from '@/state/metrics';
 import { useAppStore } from '@/state/store';
+import { firstName, useProfileStore } from '@/state/profile';
 import { accent, radius, space, useTheme } from '@/theme';
 
 const RANGES = ['Day', 'Week', 'Month'] as const;
-
-/** Focus-by-time intensity grid, transcribed from the design's `heat` matrix. */
-const HEAT: number[][] = [
-  [1, 1, 1, 2, 1, 1, 1],
-  [1, 1, 2, 3, 3, 1, 1],
-  [1, 3, 2, 2, 2, 3, 1],
-  [2, 2, 2, 4, 2, 2, 2],
-  [1, 2, 2, 2, 5, 1, 1],
-  [1, 1, 1, 2, 1, 1, 1],
-];
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
@@ -47,10 +47,11 @@ export function Overview() {
   const range = useAppStore((s) => s.range);
   const setRange = useAppStore((s) => s.setRange);
   const setPage = useAppStore((s) => s.setPage);
-  const focusBanked = useAppStore((s) => s.focusBankedSeconds);
   const resetTimer = useAppStore((s) => s.resetTimer);
   const setFocusTotal = useAppStore((s) => s.setFocusTotal);
-  const streak = useAppStore((s) => s.streak);
+  const focusLog = useAppStore((s) => s.focusLog);
+  const habitLog = useAppStore((s) => s.habitLog);
+  const habits = useAppStore((s) => s.habits);
   const events = useAppStore((s) => s.events);
   const addEvent = useAppStore((s) => s.addEvent);
 
@@ -70,32 +71,67 @@ export function Overview() {
     return { start: fmtShortDate(monday), end: fmtShortDate(sunday) };
   }, [range, now, monday, sunday]);
 
-  const barCount = range === 0 ? 24 : range === 2 ? 30 : 26;
+  const todayKey = useMemo(() => keyOf(now), [now]);
+
+  /** The focus the bars draw: today by the hour, this week, or this month. */
+  const focusBars = useMemo(() => {
+    if (range === 0) return focusLog[todayKey] ?? new Array(24).fill(0);
+    if (range === 2) return focusMonth(focusLog, now.getFullYear(), now.getMonth());
+    return focusSeries(focusLog, now, 7);
+  }, [range, focusLog, now, todayKey]);
+
+  /** The same span, one period earlier, for the comparison caption. */
+  const previousFocus = useMemo(() => {
+    if (range === 0) return focusOn(focusLog, keyOf(addDays(now, -1)));
+    if (range === 2) {
+      const last = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      return focusMonth(focusLog, last.getFullYear(), last.getMonth())
+        .slice(0, now.getDate())
+        .reduce((n, v) => n + v, 0);
+    }
+    return focusSeries(focusLog, addDays(now, -7), 7).reduce((n, v) => n + v, 0);
+  }, [range, focusLog, now]);
+
+  const focusTotalLogged = focusBars.reduce((n: number, v: number) => n + v, 0);
+  const focusPeak = Math.max(1, ...focusBars);
+  const focusAverage = focusBars.length ? focusTotalLogged / focusBars.length : 0;
 
   const workBars = useMemo(
     () =>
-      Array.from({ length: barCount }, (_, i) => ({
-        h: 44 + ((i * 7) % 5) * 4,
+      focusBars.map((seconds: number, i: number) => ({
+        h: 12 + (seconds / focusPeak) * 88,
         c: i % 3 === 0 ? accent.violet : i % 3 === 1 ? accent.purple : accent.purpleSoft,
         delay: 200 + i * 14,
       })),
-    [barCount]
+    [focusBars, focusPeak]
   );
 
-  const otherBars = useMemo(
-    () => Array.from({ length: 8 }, (_, i) => ({ h: 72 + ((i * 5) % 4) * 7, delay: 300 + i * 30 })),
-    []
-  );
+  /** Habits kept on each of the last seven days. */
+  const habitBars = useMemo(() => {
+    const counts = Array.from({ length: 7 }, (_, i) => habitsLoggedOn(habitLog, keyOf(addDays(now, i - 6))));
+    const peak = Math.max(1, ...counts);
+    return counts.map((v, i) => ({ h: 12 + (v / peak) * 88, delay: 300 + i * 30 }));
+  }, [habitLog, now]);
 
-  const todayKey = useMemo(
+  const heat = useMemo(() => focusHeat(focusLog, now, 8), [focusLog, now]);
+  const streak = useMemo(() => focusStreak(focusLog, now), [focusLog, now]);
+  const consistency = useMemo(
+    () => consistencySeries(habitLog, habits, now, 6),
+    [habitLog, habits, now]
+  );
+  const habitsKeptWeek = useMemo(
     () =>
-      `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`,
-    [now]
+      Array.from({ length: 7 }, (_, i) => habitsLoggedOn(habitLog, keyOf(addDays(now, i - 6)))).reduce(
+        (n, v) => n + v,
+        0
+      ),
+    [habitLog, now]
   );
+  const latest = consistency[consistency.length - 1];
 
   const agenda = useMemo(() => (events[todayKey] ?? []).slice(0, 5), [events, todayKey]);
 
-  const focusLogged = (2.4 + focusBanked / 3600).toFixed(1);
+  const focusLogged = fmtDuration(focusOn(focusLog, todayKey));
 
   const goToBoard = useCallback(() => setPage(1), [setPage]);
 
@@ -219,7 +255,7 @@ export function Overview() {
           <Txt size={13} color={t.muted2} style={{ marginTop: 18 }}>
             Focus logged today:{' '}
             <Txt size={13} weight="semibold" color={t.ink}>
-              {focusLogged} h
+              {focusLogged}
             </Txt>
             {' · streak '}
             <Txt size={13} weight="semibold" color={t.ink}>
@@ -248,7 +284,7 @@ export function Overview() {
           />
           <View pointerEvents="none" style={{ position: 'absolute', left: '40.5%', top: -16, paddingLeft: 14 }}>
             <Txt size={17} weight="semibold" tracking={-0.02}>
-              4h 10m logged
+              {fmtDuration(focusTotalLogged)} logged
             </Txt>
           </View>
           <View
@@ -256,14 +292,12 @@ export function Overview() {
             style={{ position: 'absolute', left: '83%', top: 44, bottom: 44, width: 1, backgroundColor: t.lineSoft }}
           />
           <Txt size={17} weight="semibold" tracking={-0.02} style={{ paddingTop: 14 }}>
-            6h 20m planned
+            {fmtDuration(previousFocus)} before
           </Txt>
 
           <DashedRule color={t.btnLine} style={{ position: 'absolute', left: 0, right: 0, top: 104 }} />
           <View style={{ position: 'absolute', left: '65%', top: 88 }}>
-            <Pill paddingH={15} paddingV={8}>
-              Average
-            </Pill>
+            <Pill paddingH={15} paddingV={8}>{`Average ${fmtDuration(focusAverage)}`}</Pill>
           </View>
 
           <View style={{ flexDirection: 'row', gap: 16, alignItems: 'flex-end', height: 186, paddingTop: 36 }}>
@@ -283,7 +317,7 @@ export function Overview() {
                   style={{ height: 46, borderRadius: radius.chip, overflow: 'hidden' }}
                 >
                   <LinearGradient
-                    colors={['#7c4dff', '#6d33f0']}
+                    colors={[accent.purpleSoft, accent.purpleDeep]}
                     start={{ x: 0, y: 0 }}
                     end={{ x: 0, y: 1 }}
                     style={{ flex: 1 }}
@@ -295,7 +329,7 @@ export function Overview() {
             <View style={{ flex: 1, paddingRight: 20 }}>
               <Txt size={14} style={{ marginBottom: 12 }}>
                 <Txt size={14} weight="semibold">
-                  + 12%
+                  {fmtDuration(focusTotalLogged)}
                 </Txt>
                 <Txt size={14} color={t.muted2}>
                   {' Deep work'}
@@ -307,13 +341,13 @@ export function Overview() {
             <View style={{ flex: 0.38 }}>
               <Txt size={14} style={{ marginBottom: 12 }}>
                 <Txt size={14} weight="semibold">
-                  3
+                  {habitsKeptWeek}
                 </Txt>
                 <Txt size={14} color={t.muted2}>
-                  {' Workouts'}
+                  {' Habits'}
                 </Txt>
               </Txt>
-              <BarGroup bars={otherBars} height={56} color={t.barMuted} />
+              <BarGroup bars={habitBars} height={56} color={t.barMuted} />
             </View>
           </View>
 
@@ -336,18 +370,23 @@ export function Overview() {
             <Legend color={t.legendMuted} label="Missed" muted />
           </View>
           <View style={{ marginTop: 10, height: 176 }}>
-            <ConsistencyChart theme={t} height={176} />
+            <ConsistencyChart
+              theme={t}
+              height={176}
+              kept={consistency.map((m) => m.kept)}
+              missed={consistency.map((m) => Math.min(1, 1 - m.kept))}
+            />
             <View style={{ position: 'absolute', right: 2, top: 20 }}>
-              <ChartBadge color={accent.limeChart} label="92% kept" />
+              <ChartBadge color={accent.limeChart} label={`${Math.round((latest?.kept ?? 0) * 100)}% kept`} />
             </View>
             <View style={{ position: 'absolute', right: 2, top: 58 }}>
-              <ChartBadge color="#8f8e99" label="3 missed" />
+              <ChartBadge color={t.legendMuted} label={`${latest?.missed ?? 0} missed`} />
             </View>
           </View>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingTop: 8, paddingHorizontal: 2 }}>
-            {['Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'].map((m) => (
-              <Txt key={m} size={13} color={t.muted2}>
-                {m}
+            {consistency.map((m) => (
+              <Txt key={m.label} size={13} color={t.muted2}>
+                {m.label}
               </Txt>
             ))}
           </View>
@@ -364,10 +403,10 @@ export function Overview() {
             ))}
           </View>
           <View style={{ marginTop: 8, gap: 7 }}>
-            {HEAT.map((row, r) => (
+            {heat.map((row, r) => (
               <View key={r} style={{ flexDirection: 'row', gap: 7, alignItems: 'center' }}>
                 <Txt size={12} color={t.muted2} style={{ width: 42 }}>
-                  {r + 1} pm
+                  {FOCUS_BANDS[r].label}
                 </Txt>
                 {row.map((v, c) => (
                   <FadeCell

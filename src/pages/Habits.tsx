@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { ScrollView, View } from 'react-native';
 import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { GrowBar } from '@/components/GrowBar';
@@ -9,19 +9,14 @@ import { RiseIn } from '@/components/RiseIn';
 import { useSheet } from '@/components/Sheet';
 import { Touchable } from '@/components/Touchable';
 import { Meter, ProgressRing, RoundButton, StatChip, Txt } from '@/components/ui';
-import { isoDay } from '@/lib/date';
+import { addDays, isoDay, keyOf, startOfWeek } from '@/lib/date';
 import { useNow } from '@/lib/useNow';
+import { habitWeek, weekSeries } from '@/state/metrics';
 import { useAppStore } from '@/state/store';
 import type { Habit, Med } from '@/state/types';
-import { accent, CURVE, DURATION, radius, useLayout, useTheme } from '@/theme';
+import { accent, CURVE, DURATION, HABIT_TINTS, onAccent, radius, useLayout, useTheme } from '@/theme';
 
 const DAY_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-
-const TINT_OPTIONS = [
-  { label: 'Violet', value: 'rgba(139,92,246,0.18)', color: accent.violet },
-  { label: 'Lime', value: 'rgba(217,242,74,0.16)', color: accent.lime },
-  { label: 'Cyan', value: 'rgba(34,211,238,0.16)', color: accent.cyan },
-];
 
 export function Habits() {
   const t = useTheme();
@@ -31,7 +26,8 @@ export function Habits() {
 
   const habits = useAppStore((s) => s.habits);
   const meds = useAppStore((s) => s.meds);
-  const toggleHabitDay = useAppStore((s) => s.toggleHabitDay);
+  const habitLog = useAppStore((s) => s.habitLog);
+  const toggleHabitOn = useAppStore((s) => s.toggleHabitOn);
   const addHabit = useAppStore((s) => s.addHabit);
   const updateHabit = useAppStore((s) => s.updateHabit);
   const removeHabit = useAppStore((s) => s.removeHabit);
@@ -39,22 +35,32 @@ export function Habits() {
   const addMed = useAppStore((s) => s.addMed);
   const updateMed = useAppStore((s) => s.updateMed);
   const removeMed = useAppStore((s) => s.removeMed);
-  const water = useAppStore((s) => s.water);
+  const waterLog = useAppStore((s) => s.waterLog);
   const waterGoal = useAppStore((s) => s.waterGoal);
   const addWater = useAppStore((s) => s.addWater);
-  const steps = useAppStore((s) => s.steps);
+  const stepLog = useAppStore((s) => s.stepLog);
   const stepGoal = useAppStore((s) => s.stepGoal);
-  const sleepMinutes = useAppStore((s) => s.sleepMinutes);
-  const sleepWeek = useAppStore((s) => s.sleepWeek);
+  const setSteps = useAppStore((s) => s.setSteps);
+  const sleepLog = useAppStore((s) => s.sleepLog);
+  const setSleep = useAppStore((s) => s.setSleep);
 
+  const weekStart = useMemo(() => startOfWeek(now), [now]);
   const dotSize = compact ? 20 : 26;
   const dotGap = compact ? 5 : 8;
 
   const today = isoDay(now);
-  const habitDone = habits.filter((h) => h.days[today]).length;
+  const todayKey = keyOf(now);
+  const loggedToday = habitLog[todayKey] ?? [];
+  const habitDone = habits.filter((h) => loggedToday.includes(h.id)).length;
   const medsTaken = meds.filter((m) => m.taken).length;
   const medsPct = meds.length ? medsTaken / meds.length : 0;
+
+  const water = waterLog[todayKey] ?? 0;
+  const steps = stepLog[todayKey] ?? 0;
   const stepPct = Math.min(100, Math.round((steps / stepGoal) * 100));
+  const sleepMinutes = sleepLog[todayKey] ?? 0;
+  const sleepWeek = useMemo(() => weekSeries(sleepLog, now), [sleepLog, now]);
+  const sleepPeak = Math.max(1, ...sleepWeek);
 
   const openHabitSheet = useCallback(
     (habit?: Habit) => {
@@ -65,7 +71,7 @@ export function Habits() {
           { key: 'name', label: 'Habit', placeholder: 'Read 20 pages', initial: habit?.name, required: true },
           { key: 'meta', label: 'Detail', placeholder: 'Before bed', initial: habit?.meta },
           { key: 'glyph', label: 'Glyph', placeholder: '📖', initial: habit?.glyph ?? '✨' },
-          { key: 'tint', label: 'Tint', kind: 'select', initial: habit?.tint, options: TINT_OPTIONS },
+          { key: 'tint', label: 'Tint', kind: 'select', initial: habit?.tint, options: [...HABIT_TINTS] },
         ],
         onSubmit: (v) => {
           const payload = { name: v.name, meta: v.meta, glyph: v.glyph || '✨', tint: v.tint };
@@ -98,6 +104,30 @@ export function Habits() {
     },
     [openSheet, addMed, updateMed, removeMed]
   );
+
+  const openStepSheet = useCallback(() => {
+    openSheet({
+      title: 'Steps today',
+      subtitle: 'What your phone or watch says.',
+      submitLabel: 'Save',
+      fields: [{ key: 'steps', label: 'Steps', placeholder: '8400', initial: steps ? String(steps) : '', required: true }],
+      onSubmit: (v) => setSteps(todayKey, Number(v.steps.replace(/[^0-9]/g, '')) || 0),
+    });
+  }, [openSheet, setSteps, steps, todayKey]);
+
+  const openSleepSheet = useCallback(() => {
+    openSheet({
+      title: 'Sleep last night',
+      subtitle: 'Hours and minutes, as you slept them.',
+      submitLabel: 'Save',
+      fields: [
+        { key: 'hours', label: 'Hours', placeholder: '7', initial: sleepMinutes ? String(Math.floor(sleepMinutes / 60)) : '', required: true },
+        { key: 'minutes', label: 'Minutes', placeholder: '20', initial: sleepMinutes ? String(sleepMinutes % 60) : '' },
+      ],
+      onSubmit: (v) =>
+        setSleep(todayKey, (Number(v.hours) || 0) * 60 + (Number(v.minutes) || 0)),
+    });
+  }, [openSheet, setSleep, sleepMinutes, todayKey]);
 
   return (
     <View style={{ flex: 1, paddingHorizontal: gutter }}>
@@ -178,9 +208,11 @@ export function Habits() {
                 key={hb.id}
                 habit={hb}
                 today={today}
+                week={habitWeek(habitLog, hb.id, now)}
+                weekStart={weekStart}
                 dotSize={dotSize}
                 dotGap={dotGap}
-                onToggleDay={toggleHabitDay}
+                onToggleDay={toggleHabitOn}
                 onEdit={openHabitSheet}
               />
             ))}
@@ -211,7 +243,7 @@ export function Habits() {
                 Meds &amp; pills
               </Txt>
               <Txt size={13} color={t.muted2} style={{ marginTop: 3 }}>
-                {medsTaken}/{meds.length} pills taken · refill in 12 days
+                {medsTaken}/{meds.length} taken today
               </Txt>
             </View>
             <ProgressRing progress={medsPct} color={accent.cyan} label={`${Math.round(medsPct * 100)}%`} />
@@ -249,15 +281,26 @@ export function Habits() {
               borderColor: t.line,
             }}
           >
-            <Txt size={13} color={t.muted2}>
-              Sleep last night
-            </Txt>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Txt size={13} color={t.muted2}>
+                Sleep last night
+              </Txt>
+              <RoundButton
+                icon="plus"
+                size={28}
+                iconSize={13}
+                strokeWidth={2.4}
+                activeScale={0.88}
+                accessibilityLabel="Log sleep"
+                onPress={openSleepSheet}
+              />
+            </View>
             <Txt size={34} weight="semibold" tracking={-0.035} lineHeight={1.1} style={{ marginTop: 6 }}>
-              {Math.floor(sleepMinutes / 60)}h {sleepMinutes % 60}m
+              {sleepMinutes ? `${Math.floor(sleepMinutes / 60)}h ${sleepMinutes % 60}m` : 'Not logged'}
             </Txt>
             <View style={{ flexDirection: 'row', gap: 5, alignItems: 'flex-end', height: 40, marginTop: 14 }}>
               {sleepWeek.map((v, i) => (
-                <View key={i} style={{ flex: 1, height: `${v}%` }}>
+                <View key={i} style={{ flex: 1, height: `${Math.max(6, (v / sleepPeak) * 100)}%` }}>
                   <GrowBar
                     delay={200 + i * 50}
                     style={{
@@ -291,7 +334,7 @@ export function Habits() {
                 strokeWidth={2.4}
                 activeScale={0.88}
                 accessibilityLabel="Add a glass"
-                onPress={addWater}
+                onPress={() => addWater(todayKey)}
               />
             </View>
             <Txt size={26} weight="semibold" tracking={-0.03} style={{ marginTop: 6 }}>
@@ -314,9 +357,20 @@ export function Habits() {
               borderColor: t.line,
             }}
           >
-            <Txt size={13} color={t.muted2}>
-              Steps
-            </Txt>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Txt size={13} color={t.muted2}>
+                Steps
+              </Txt>
+              <RoundButton
+                icon="plus"
+                size={28}
+                iconSize={13}
+                strokeWidth={2.4}
+                activeScale={0.88}
+                accessibilityLabel="Log steps"
+                onPress={openStepSheet}
+              />
+            </View>
             <Txt size={26} weight="semibold" tracking={-0.03} style={{ marginTop: 6 }}>
               {steps.toLocaleString()}
             </Txt>
@@ -397,7 +451,7 @@ function RoundTick({ checked }: { checked: boolean }) {
       ]}
     >
       <Animated.View style={tick}>
-        <Icon name="check" size={12} color="#0a0a0c" strokeWidth={3.4} />
+        <Icon name="check" size={12} color={onAccent.bright} strokeWidth={3.4} />
       </Animated.View>
     </Animated.View>
   );
@@ -424,6 +478,8 @@ function Glass({ filled }: { filled: boolean }) {
 const HabitRow = React.memo(function HabitRow({
   habit,
   today,
+  week,
+  weekStart,
   dotSize,
   dotGap,
   onToggleDay,
@@ -431,9 +487,12 @@ const HabitRow = React.memo(function HabitRow({
 }: {
   habit: Habit;
   today: number;
+  /** Monday-first flags for the week on screen. */
+  week: boolean[];
+  weekStart: Date;
   dotSize: number;
   dotGap: number;
-  onToggleDay(id: string, dayIndex: number): void;
+  onToggleDay(id: string, dateKey: string): void;
   onEdit(habit: Habit): void;
 }) {
   const t = useTheme();
@@ -473,13 +532,13 @@ const HabitRow = React.memo(function HabitRow({
         </Txt>
       </Touchable>
       <View style={{ flexDirection: 'row', gap: dotGap }}>
-        {habit.days.map((v, i) => (
+        {week.map((on, i) => (
           <DayDot
             key={i}
-            on={!!v}
+            on={on}
             isToday={i === today}
             size={dotSize}
-            onPress={() => onToggleDay(habit.id, i)}
+            onPress={() => onToggleDay(habit.id, keyOf(addDays(weekStart, i)))}
           />
         ))}
       </View>
@@ -521,7 +580,7 @@ const MedRow = React.memo(function MedRow({
           size={14}
           weight="semibold"
           tracking={-0.01}
-          color={med.taken && t.name === 'light' ? '#4d4f57' : t.ink}
+          color={med.taken ? t.inkDone : t.ink}
           style={[
             med.taken ? { textDecorationLine: 'line-through' } : null,
             med.taken && t.name === 'dark' ? { opacity: 0.55 } : null,

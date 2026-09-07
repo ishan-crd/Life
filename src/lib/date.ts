@@ -46,6 +46,18 @@ export function dateKey(year: number, month: number, day: number): string {
   return `${monthKey(year, month)}-${String(day).padStart(2, '0')}`;
 }
 
+/** The `YYYY-MM-DD` bucket a date falls in — the key every log is written under. */
+export function keyOf(d: Date): string {
+  return dateKey(d.getFullYear(), d.getMonth(), d.getDate());
+}
+
+/** Seconds as "4h 10m", or "35m" under the hour. */
+export function fmtDuration(totalSeconds: number): string {
+  const mins = Math.round(totalSeconds / 60);
+  const h = Math.floor(mins / 60);
+  return h ? `${h}h ${mins % 60}m` : `${mins}m`;
+}
+
 export function mmss(totalSeconds: number): string {
   const m = Math.floor(totalSeconds / 60);
   const s = Math.floor(totalSeconds % 60);

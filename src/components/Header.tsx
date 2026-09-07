@@ -1,16 +1,21 @@
 import React, { useCallback } from 'react';
 import { View } from 'react-native';
+import { firstName, useProfileStore } from '@/state/profile';
 import { PAGE_TITLES, useAppStore } from '@/state/store';
 import { ConicDisc } from './ConicDisc';
 import { RoundButton, Txt } from './ui';
 import { Touchable } from './Touchable';
-import { accent, radius, size as metric, tracking, useLayout, useTheme, type as typeScale } from '@/theme';
-
-const BRAND_STOPS = [
-  { color: '#c4b5fd', to: 150 },
-  { color: '#6d28d9', to: 250 },
-  { color: '#3b1d8f', to: 360 },
-];
+import {
+  accent,
+  BRAND_STOPS,
+  onAccent,
+  radius,
+  size as metric,
+  tracking,
+  useLayout,
+  useTheme,
+  type as typeScale,
+} from '@/theme';
 
 interface HeaderProps {
   onSearch(): void;
@@ -33,6 +38,8 @@ export const Header = React.memo(function Header({
   const setPage = useAppStore((s) => s.setPage);
   const light = useAppStore((s) => s.light);
   const toggleTheme = useAppStore((s) => s.toggleTheme);
+  const profile = useProfileStore((s) => s.profile);
+  const initial = firstName(profile).charAt(0).toUpperCase();
 
   const pick = useCallback((i: number) => () => setPage(i), [setPage]);
 
@@ -151,8 +158,8 @@ export const Header = React.memo(function Header({
         >
           <ConicDisc size={button} from={20} stops={BRAND_STOPS} />
           <View style={{ position: 'absolute' }}>
-            <Txt size={16} weight="semibold" color="#fff">
-              A
+            <Txt size={16} weight="semibold" color={onAccent.deep}>
+              {initial}
             </Txt>
           </View>
         </Touchable>

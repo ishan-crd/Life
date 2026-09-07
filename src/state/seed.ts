@@ -1,8 +1,11 @@
-import { dateKey, daysInMonth } from '@/lib/date';
+import { addDays, dateKey, daysInMonth, keyOf, startOfWeek } from '@/lib/date';
 import type {
   BoardColumn,
   CalEvent,
+  DailyLog,
   EventMap,
+  FocusLog,
+  HabitLog,
   Habit,
   Med,
   Note,
@@ -11,7 +14,7 @@ import type {
   Task,
   WeekSplitRow,
 } from './types';
-import { accent } from '@/theme';
+import { accent, HABIT_TINTS } from '@/theme';
 
 export const seedTasks: Task[] = [
   { id: 't1', label: 'Check Clipstake Discord', meta: 'Community · morning', done: true },
@@ -54,12 +57,12 @@ export const seedColumns: BoardColumn[] = [
 ];
 
 export const seedHabits: Habit[] = [
-  { id: 'h1', name: 'Discord check-in', meta: 'Clipstake · every morning', glyph: '💬', tint: 'rgba(139,92,246,0.18)', days: [1, 1, 1, 1, 1, 0, 0] },
-  { id: 'h2', name: 'Workout', meta: '4× a week · Cult', glyph: '🏋', tint: 'rgba(217,242,74,0.16)', days: [1, 0, 1, 1, 0, 0, 0] },
-  { id: 'h3', name: 'Read 20 pages', meta: 'Before bed', glyph: '📖', tint: 'rgba(34,211,238,0.16)', days: [1, 1, 0, 1, 1, 0, 0] },
-  { id: 'h4', name: 'No screens after 11', meta: 'Sleep hygiene', glyph: '🌙', tint: 'rgba(139,92,246,0.14)', days: [0, 1, 1, 0, 1, 0, 0] },
-  { id: 'h5', name: 'Journal', meta: '5 min · evening', glyph: '✍', tint: 'rgba(217,242,74,0.14)', days: [1, 1, 1, 0, 0, 0, 0] },
-  { id: 'h6', name: 'Stretch', meta: '10 min · post-work', glyph: '🧘', tint: 'rgba(34,211,238,0.14)', days: [0, 0, 1, 1, 1, 0, 0] },
+  { id: 'h1', name: 'Discord check-in', meta: 'Clipstake · every morning', glyph: '💬', tint: HABIT_TINTS[0].value },
+  { id: 'h2', name: 'Workout', meta: '4× a week · Cult', glyph: '🏋', tint: HABIT_TINTS[1].value },
+  { id: 'h3', name: 'Read 20 pages', meta: 'Before bed', glyph: '📖', tint: HABIT_TINTS[2].value },
+  { id: 'h4', name: 'No screens after 11', meta: 'Sleep hygiene', glyph: '🌙', tint: HABIT_TINTS[0].value },
+  { id: 'h5', name: 'Journal', meta: '5 min · evening', glyph: '✍', tint: HABIT_TINTS[1].value },
+  { id: 'h6', name: 'Stretch', meta: '10 min · post-work', glyph: '🧘', tint: HABIT_TINTS[2].value },
 ];
 
 export const seedMeds: Med[] = [
@@ -160,4 +163,64 @@ export function seedMonthProtein(year: number, month: number, existing: ProteinM
     next[key] = PROTEIN_ROTATIONS[day % 3].map((e, i) => ({ ...e, id: `${key}_p${i}` }));
   }
   return next;
+}
+
+/**
+ * Eight weeks of history for a brand new account, so the charts open with
+ * something to say. All of it is written into the same dated logs the app
+ * writes to from here on, and it stops at yesterday — today is yours.
+ */
+const HISTORY_DAYS = 56;
+
+/** Deep work clusters late morning and mid-afternoon on weekdays. */
+const FOCUS_SHAPE: Record<number, number> = { 9: 0.6, 10: 1, 11: 0.9, 14: 0.8, 15: 1, 16: 0.5, 20: 0.4 };
+
+/**
+ * A deterministic 0..1 wobble. Seeded history should be identical on every
+ * device and every reinstall, so this stands in for `Math.random`.
+ */
+function wobble(n: number): number {
+  return ((Math.sin(n * 12.9898) * 43758.5453) % 1 + 1) % 1;
+}
+
+export function seedFocusLog(today: Date): FocusLog {
+  const log: FocusLog = {};
+  for (let i = HISTORY_DAYS; i >= 1; i -= 1) {
+    const day = addDays(today, -i);
+    const weekend = day.getDay() === 0 || day.getDay() === 6;
+    // Roughly one day in seven is a write-off, and weekends are lighter.
+    if (wobble(i) < (weekend ? 0.55 : 0.12)) continue;
+    const hours = new Array(24).fill(0);
+    for (const [hour, weight] of Object.entries(FOCUS_SHAPE)) {
+      const minutes = Math.round(weight * (weekend ? 22 : 46) * (0.6 + wobble(i * 24 + Number(hour))));
+      hours[Number(hour)] = minutes * 60;
+    }
+    log[keyOf(day)] = hours;
+  }
+  return log;
+}
+
+export function seedHabitLog(today: Date, habits: Habit[]): HabitLog {
+  const log: HabitLog = {};
+  for (let i = HISTORY_DAYS; i >= 1; i -= 1) {
+    const day = addDays(today, -i);
+    const kept = habits.filter((h, hi) => wobble(i * 7 + hi) > (day.getDay() % 6 === 0 ? 0.55 : 0.25));
+    if (kept.length) log[keyOf(day)] = kept.map((h) => h.id);
+  }
+  // The current week reads as in progress rather than perfect.
+  const monday = startOfWeek(today);
+  for (let d = 0; d < 7; d += 1) {
+    const day = addDays(monday, d);
+    if (day >= today) break;
+    log[keyOf(day)] = habits.filter((h, hi) => wobble(d * 11 + hi) > 0.3).map((h) => h.id);
+  }
+  return log;
+}
+
+export function seedDailyLog(today: Date, base: number, spread: number): DailyLog {
+  const log: DailyLog = {};
+  for (let i = HISTORY_DAYS; i >= 1; i -= 1) {
+    log[keyOf(addDays(today, -i))] = Math.round(base + (wobble(i * 3.7) - 0.5) * spread);
+  }
+  return log;
 }

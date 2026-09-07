@@ -1,9 +1,13 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
+import { addDays, keyOf, startOfWeek } from '@/lib/date';
 import { uid } from '@/lib/id';
 import {
   seedColumns,
+  seedDailyLog,
+  seedFocusLog,
+  seedHabitLog,
   seedHabits,
   seedMeds,
   seedMonthEvents,
@@ -17,8 +21,11 @@ import type {
   BoardColumn,
   CalEvent,
   ColumnKey,
+  DailyLog,
   EventMap,
+  FocusLog,
   Habit,
+  HabitLog,
   Med,
   Note,
   ProteinEntry,
@@ -40,7 +47,6 @@ export interface AppState {
   focusLeft: number;
   focusTotal: number;
   focusRunning: boolean;
-  focusBankedSeconds: number;
 
   tasks: Task[];
   columns: BoardColumn[];
@@ -51,13 +57,19 @@ export interface AppState {
   protein: ProteinMap;
   weekSplit: WeekSplitRow[];
 
-  water: number;
+  /**
+   * Everything the dashboard charts is a dated log, keyed `YYYY-MM-DD` the way
+   * `events` is. `src/state/metrics.ts` turns them into the numbers screens
+   * show, so no screen carries a figure of its own.
+   */
+  focusLog: FocusLog;
+  habitLog: HabitLog;
+  waterLog: DailyLog;
+  stepLog: DailyLog;
+  sleepLog: DailyLog;
+
   waterGoal: number;
-  steps: number;
   stepGoal: number;
-  sleepMinutes: number;
-  sleepWeek: number[];
-  streak: number;
   proteinGoal: number;
 
   selectedDate: string | null;
@@ -83,7 +95,7 @@ export interface AppState {
 
   addHabit(input: Omit<Habit, 'id' | 'days'>): void;
   updateHabit(id: string, patch: Partial<Omit<Habit, 'id'>>): void;
-  toggleHabitDay(id: string, dayIndex: number): void;
+  toggleHabitOn(id: string, dateKey: string): void;
   removeHabit(id: string): void;
 
   addMed(input: Omit<Med, 'id' | 'taken'>): void;
@@ -106,7 +118,9 @@ export interface AppState {
   removeProtein(dateKey: string, id: string): void;
   setProteinGoal(grams: number): void;
 
-  addWater(): void;
+  addWater(dateKey: string): void;
+  setSteps(dateKey: string, steps: number): void;
+  setSleep(dateKey: string, minutes: number): void;
 
   applyOnboarding(input: {
     rituals: string[];
@@ -137,6 +151,17 @@ export function proteinTotal(entries: ProteinEntry[] | undefined): number {
   return entries ? entries.reduce((n, e) => n + e.grams, 0) : 0;
 }
 
+/** A brand new account opens on eight weeks of seeded history. */
+function seedLogs(today = new Date()) {
+  return {
+    focusLog: seedFocusLog(today),
+    habitLog: seedHabitLog(today, seedHabits),
+    waterLog: seedDailyLog(today, 6, 5),
+    stepLog: seedDailyLog(today, 8400, 5200),
+    sleepLog: seedDailyLog(today, 432, 110),
+  };
+}
+
 const initial = {
   light: false,
   page: 0,
@@ -144,7 +169,6 @@ const initial = {
   focusLeft: 25 * 60,
   focusTotal: 25 * 60,
   focusRunning: false,
-  focusBankedSeconds: 0,
   tasks: seedTasks,
   columns: seedColumns,
   habits: seedHabits,
@@ -153,13 +177,9 @@ const initial = {
   events: {} as EventMap,
   protein: {} as ProteinMap,
   weekSplit: seedWeekSplit,
-  water: 5,
+  ...seedLogs(),
   waterGoal: 8,
-  steps: 8420,
   stepGoal: 10000,
-  sleepMinutes: 440,
-  sleepWeek: [62, 78, 55, 88, 70, 96, 74],
-  streak: 17,
   proteinGoal: 150,
   selectedDate: null,
 };
@@ -176,12 +196,17 @@ export const useAppStore = create<AppState>()(
 
       toggleTimer: () => set((s) => ({ focusRunning: !s.focusRunning })),
       resetTimer: () => set((s) => ({ focusLeft: s.focusTotal, focusRunning: false })),
+      /** One second of a running block, banked into the hour it happened in. */
       tickTimer: () =>
         set((s) => {
           if (!s.focusRunning || s.focusLeft <= 0) {
             return s.focusRunning && s.focusLeft <= 0 ? { focusRunning: false } : {};
           }
-          return { focusLeft: s.focusLeft - 1, focusBankedSeconds: s.focusBankedSeconds + 1 };
+          const now = new Date();
+          const key = keyOf(now);
+          const hours = s.focusLog[key] ? [...s.focusLog[key]] : new Array(24).fill(0);
+          hours[now.getHours()] += 1;
+          return { focusLeft: s.focusLeft - 1, focusLog: { ...s.focusLog, [key]: hours } };
         }),
       setFocusTotal: (minutes) =>
         set({ focusTotal: minutes * 60, focusLeft: minutes * 60, focusRunning: false }),
@@ -230,19 +255,25 @@ export const useAppStore = create<AppState>()(
           };
         }),
 
-      addHabit: (input) =>
-        set((s) => ({ habits: [...s.habits, { ...input, id: uid('h'), days: [0, 0, 0, 0, 0, 0, 0] }] })),
+      addHabit: (input) => set((s) => ({ habits: [...s.habits, { ...input, id: uid('h') }] })),
       updateHabit: (id, patch) =>
         set((s) => ({ habits: s.habits.map((h) => (h.id === id ? { ...h, ...patch } : h)) })),
-      toggleHabitDay: (id, dayIndex) =>
-        set((s) => ({
-          habits: s.habits.map((h) =>
-            h.id === id
-              ? { ...h, days: h.days.map((d, i) => (i === dayIndex ? (d ? 0 : 1) : d)) }
-              : h
-          ),
-        })),
-      removeHabit: (id) => set((s) => ({ habits: s.habits.filter((h) => h.id !== id) })),
+      toggleHabitOn: (id, key) =>
+        set((s) => {
+          const logged = s.habitLog[key] ?? [];
+          const next = logged.includes(id) ? logged.filter((x) => x !== id) : [...logged, id];
+          return { habitLog: { ...s.habitLog, [key]: next } };
+        }),
+      /** Dropping a habit drops its history with it, so nothing counts a ghost. */
+      removeHabit: (id) =>
+        set((s) => {
+          const habitLog: HabitLog = {};
+          for (const [key, ids] of Object.entries(s.habitLog)) {
+            const kept = ids.filter((x) => x !== id);
+            if (kept.length) habitLog[key] = kept;
+          }
+          return { habits: s.habits.filter((h) => h.id !== id), habitLog };
+        }),
 
       addMed: (input) => set((s) => ({ meds: [...s.meds, { ...input, id: uid('m'), taken: false }] })),
       updateMed: (id, patch) =>
@@ -331,7 +362,16 @@ export const useAppStore = create<AppState>()(
       /** A goal of zero would make every day 0% — keep at least one gram. */
       setProteinGoal: (grams) => set({ proteinGoal: Math.max(1, Math.round(grams)) }),
 
-      addWater: () => set((s) => ({ water: s.water >= s.waterGoal ? 0 : s.water + 1 })),
+      addWater: (key) =>
+        set((s) => {
+          const glasses = s.waterLog[key] ?? 0;
+          // Tapping past the goal starts the day over rather than counting on.
+          return { waterLog: { ...s.waterLog, [key]: glasses >= s.waterGoal ? 0 : glasses + 1 } };
+        }),
+      setSteps: (key, steps) =>
+        set((s) => ({ stepLog: { ...s.stepLog, [key]: Math.max(0, Math.round(steps)) } })),
+      setSleep: (key, minutes) =>
+        set((s) => ({ sleepLog: { ...s.sleepLog, [key]: Math.max(0, Math.round(minutes)) } })),
 
       /** Seeds the dashboard from the answers collected during onboarding. */
       applyOnboarding: ({ rituals, waterGoal, stepGoal, proteinGoal, focusHours }) =>
@@ -345,7 +385,6 @@ export const useAppStore = create<AppState>()(
               }))
             : s.tasks,
           waterGoal,
-          water: Math.min(s.water, waterGoal),
           stepGoal,
           proteinGoal,
           focusTotal: Math.max(15, Math.min(90, Math.round((focusHours * 60) / 2))) * 60,
@@ -353,14 +392,47 @@ export const useAppStore = create<AppState>()(
         })),
 
       /** Wipes the dashboard back to its seed — used when an account signs out. */
-      resetAll: () => set({ ...initial, events: {}, protein: {} }),
+      /** Wipes the dashboard back to a fresh account, history included. */
+      resetAll: () => set({ ...initial, ...seedLogs(), events: {}, protein: {} }),
     }),
     {
       name: 'life-dashboard-v1',
-      version: 1,
+      version: 2,
       storage: createJSONStorage(() => AsyncStorage),
       // `hydrated` is runtime-only and `page` should always start at the overview.
       partialize: ({ hydrated: _hydrated, page: _page, ...rest }) => rest,
+      /**
+       * v1 kept a week of dots on each habit and a single number for water,
+       * steps and sleep. Both become dated logs, so the week of dots is
+       * replayed onto the dates it stood for and the single numbers land on
+       * the day the app was last open — today.
+       */
+      migrate: (persisted, version) => {
+        if (version >= 2) return persisted;
+        const s = persisted as Record<string, unknown>;
+        const today = new Date();
+        const key = keyOf(today);
+        const monday = startOfWeek(today);
+        const habits = (s.habits ?? []) as (Habit & { days?: number[] })[];
+        const habitLog: HabitLog = {};
+        for (const habit of habits) {
+          habit.days?.forEach((on, i) => {
+            if (!on) return;
+            const dayKey = keyOf(addDays(monday, i));
+            habitLog[dayKey] = [...(habitLog[dayKey] ?? []), habit.id];
+          });
+          delete habit.days;
+        }
+        return {
+          ...s,
+          habits,
+          habitLog,
+          focusLog: seedFocusLog(today),
+          waterLog: { [key]: (s.water as number) ?? 0 },
+          stepLog: { [key]: (s.steps as number) ?? 0 },
+          sleepLog: { [key]: (s.sleepMinutes as number) ?? 0 },
+        };
+      },
       onRehydrateStorage: () => (state) => {
         useAppStore.setState({ hydrated: true });
         state?.setPage?.(0);

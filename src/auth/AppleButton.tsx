@@ -45,6 +45,8 @@ export function AppleButton({
       style={{
         height: metric.formButton,
         borderRadius: radius.pill,
+        // Apple's HIG fixes the sign-in button's black and white; they are not
+        // ours to theme.
         backgroundColor: '#000000',
         borderWidth: 1,
         borderColor: '#000000',

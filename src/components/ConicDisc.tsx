@@ -18,7 +18,7 @@ export function ConicDisc({
 }: {
   size: number;
   from?: number;
-  stops: Stop[];
+  stops: readonly Stop[];
 }) {
   const paths = useMemo(() => {
     const r = size / 2;

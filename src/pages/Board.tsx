@@ -18,7 +18,7 @@ import { Touchable } from '@/components/Touchable';
 import { Pill, PrimaryButton, ProgressRing, StatChip, Txt } from '@/components/ui';
 import { useAppStore } from '@/state/store';
 import type { BoardCard, ColumnKey } from '@/state/types';
-import { accent, CURVE, DURATION, elevation, layer, radius, useLayout, useTheme } from '@/theme';
+import { accent, CURVE, DURATION, elevation, layer, onAccent, radius, useLayout, useTheme } from '@/theme';
 
 interface Frame {
   x: number;
@@ -387,7 +387,7 @@ export function Board() {
                 zIndex: layer.dragGhost,
                 padding: 14,
                 borderRadius: radius.tile,
-                backgroundColor: t.name === 'light' ? '#ffffff' : '#1c1b22',
+                backgroundColor: t.dragGhost,
                 borderWidth: 1,
                 borderColor: t.btnLineSoft,
                 ...elevation.dragGhost,
@@ -472,7 +472,7 @@ function Checkbox({ checked }: { checked: boolean }) {
       ]}
     >
       <Animated.View style={tick}>
-        <Icon name="check" size={12} color="#fff" strokeWidth={3.4} />
+        <Icon name="check" size={12} color={onAccent.deep} strokeWidth={3.4} />
       </Animated.View>
     </Animated.View>
   );

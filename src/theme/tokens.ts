@@ -7,6 +7,7 @@
 export const accent = {
   purple: '#6d3bf5',
   purpleSoft: '#7c4dff',
+  purpleDeep: '#6d33f0',
   violet: '#8b5cf6',
   violetSoft: '#a78bfa',
   violetDeep: '#4b31a8',
@@ -17,6 +18,32 @@ export const accent = {
   limeChart: '#c8e832',
   rose: '#f43f5e',
 } as const;
+
+/**
+ * Ink for a glyph sitting on a filled accent swatch. Purple carries white;
+ * lime and cyan are bright enough to need the dark ink instead.
+ */
+export const onAccent = {
+  deep: '#ffffff',
+  bright: '#0a0a0c',
+} as const;
+
+/**
+ * The three tints a habit glyph can wear. They live here rather than in the
+ * seed and the habit editor separately, which is where they used to disagree.
+ */
+export const HABIT_TINTS = [
+  { label: 'Violet', value: 'rgba(139,92,246,0.18)', color: accent.violet },
+  { label: 'Lime', value: 'rgba(217,242,74,0.16)', color: accent.lime },
+  { label: 'Cyan', value: 'rgba(34,211,238,0.16)', color: accent.cyan },
+] as const;
+
+/** The conic sweep behind the wordmark and the avatar. */
+export const BRAND_STOPS = [
+  { color: '#c4b5fd', to: 150 },
+  { color: '#6d28d9', to: 250 },
+  { color: '#3b1d8f', to: 360 },
+] as const;
 
 export type ThemeName = 'dark' | 'light';
 
@@ -68,6 +95,12 @@ export interface Theme {
   protein: string;
   /** The neutral "Missed" swatch in the consistency legend. */
   legendMuted: string;
+  /** The card that follows the finger while a board card is being dragged. */
+  dragGhost: string;
+  /** Struck-through text on a pill that has been taken. */
+  inkDone: string;
+  /** The dimmed backdrop behind a sheet. */
+  scrim: string;
   sleepIdle: string;
   glassEmpty: string;
   rangeActiveBg: string;
@@ -120,6 +153,9 @@ export const darkTheme: Theme = {
   barMuted: '#3d2a76',
   protein: '#d9f24a',
   legendMuted: '#4b4a53',
+  dragGhost: '#1c1b22',
+  inkDone: '#ffffff',
+  scrim: 'rgba(4,4,6,0.62)',
   sleepIdle: '#2f2952',
   glassEmpty: '#232228',
   rangeActiveBg: '#2a2930',
@@ -172,6 +208,9 @@ export const lightTheme: Theme = {
   barMuted: '#c3b1fa',
   protein: '#5f6f0a',
   legendMuted: '#b8b9c4',
+  dragGhost: '#ffffff',
+  inkDone: '#4d4f57',
+  scrim: 'rgba(4,4,6,0.45)',
   sleepIdle: '#e3e0f6',
   glassEmpty: '#e8e9ef',
   rangeActiveBg: '#e2e3ea',

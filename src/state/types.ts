@@ -28,8 +28,6 @@ export interface Habit {
   meta: string;
   glyph: string;
   tint: string;
-  /** Monday-first, 7 entries, 1 = logged. */
-  days: number[];
 }
 
 export interface Med {
@@ -75,6 +73,18 @@ export interface ProteinEntry {
 
 /** Protein logs bucketed by `YYYY-MM-DD`, keyed like `EventMap`. */
 export type ProteinMap = Record<string, ProteinEntry[]>;
+
+/**
+ * Seconds of focus per hour of the day — 24 buckets a day. Hour resolution is
+ * what the focus heatmap needs; the daily totals fall out of it by summing.
+ */
+export type FocusLog = Record<string, number[]>;
+
+/** Ids of the habits logged on a day. */
+export type HabitLog = Record<string, string[]>;
+
+/** One number a day: glasses drunk, steps walked, minutes asleep. */
+export type DailyLog = Record<string, number>;
 
 export interface WeekSplitRow {
   id: string;
