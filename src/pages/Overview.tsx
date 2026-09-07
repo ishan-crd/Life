@@ -122,6 +122,7 @@ export function Overview() {
       ],
       onSubmit: (v) => setFocusTotal(Number(v.minutes)),
       onDelete: resetTimer,
+      deleteLabel: 'Reset timer',
     });
   }, [openSheet, setFocusTotal, resetTimer]);
 

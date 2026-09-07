@@ -29,6 +29,8 @@ export interface SheetSpec {
   fields: SheetField[];
   onSubmit(values: Record<string, string>): void;
   onDelete?(): void;
+  /** Label for the secondary destructive action (defaults to "Delete"). */
+  deleteLabel?: string;
 }
 
 interface SheetContextValue {
@@ -219,7 +221,7 @@ export function SheetProvider({ children }: { children: React.ReactNode }) {
                           >
                             <Icon name="trash" size={15} color={t.inkSoft} />
                             <Txt size={14} color={t.inkSoft}>
-                              Delete
+                              {spec.deleteLabel ?? 'Delete'}
                             </Txt>
                           </Touchable>
                         ) : null}

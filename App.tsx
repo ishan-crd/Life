@@ -137,6 +137,7 @@ function Dashboard() {
       fields: [{ key: 'name', label: 'Display name', initial: profile?.name ?? '', required: true }],
       onSubmit: (v) => useProfileStore.getState().setName(v.name.trim()),
       onDelete: () => useProfileStore.getState().signOut(),
+      deleteLabel: 'Sign out',
     });
   }, [openSheet]);
 
