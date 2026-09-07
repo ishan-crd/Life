@@ -31,7 +31,16 @@ export function usePager(): PagerContextValue {
   return ctx;
 }
 
-export function Pager({ width, children }: { width: number; children: React.ReactNode }) {
+export function Pager({
+  width,
+  children,
+  overlay,
+}: {
+  width: number;
+  children: React.ReactNode;
+  /** Rendered above the track but inside the pager context (e.g. page dots). */
+  overlay?: React.ReactNode;
+}) {
   const page = useAppStore((s) => s.page);
   const setPage = useAppStore((s) => s.setPage);
 
@@ -102,6 +111,7 @@ export function Pager({ width, children }: { width: number; children: React.Reac
               </View>
             ))}
           </Animated.View>
+          {overlay}
         </View>
       </GestureDetector>
     </PagerContext.Provider>

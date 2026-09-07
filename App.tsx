@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { View, useWindowDimensions } from 'react-native';
+import { Platform, View, useWindowDimensions } from 'react-native';
+import * as ScreenOrientation from 'expo-screen-orientation';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,10 +20,35 @@ import { Calendar } from '@/pages/Calendar';
 import { Habits } from '@/pages/Habits';
 import { Notes } from '@/pages/Notes';
 import { Overview } from '@/pages/Overview';
-import { useAppStore } from '@/state/store';
+import { PAGE_TITLES, useAppStore } from '@/state/store';
 import { useTheme } from '@/theme/useTheme';
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
+
+/** The dashboard is designed for a landscape iPad canvas. */
+function useLandscapeLock() {
+  useEffect(() => {
+    ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE).catch(() => undefined);
+    return () => {
+      ScreenOrientation.unlockAsync().catch(() => undefined);
+    };
+  }, []);
+}
+
+/** On web, `#board`, `#calendar`, … deep-link straight to a page. */
+function useHashRoute() {
+  useEffect(() => {
+    if (Platform.OS !== 'web') return;
+    const apply = () => {
+      const hash = window.location.hash.replace('#', '').toLowerCase();
+      const index = PAGE_TITLES.findIndex((p) => p.toLowerCase() === hash);
+      if (index >= 0) useAppStore.getState().setPage(index);
+    };
+    apply();
+    window.addEventListener('hashchange', apply);
+    return () => window.removeEventListener('hashchange', apply);
+  }, []);
+}
 
 /** Drives the focus countdown from a single interval for the whole app. */
 function useFocusTicker() {
@@ -42,6 +68,7 @@ function Dashboard() {
   const { width } = useWindowDimensions();
   const { openSheet } = useSheet();
   useFocusTicker();
+  useHashRoute();
 
   const shellWidth = Math.max(320, width - insets.left - insets.right - 24);
 
@@ -94,7 +121,7 @@ function Dashboard() {
       >
         <Header onSearch={onSearch} onNotifications={noop} onProfile={noop} hasNotifications />
         <View style={{ flex: 1 }}>
-          <Pager width={shellWidth}>
+          <Pager width={shellWidth} overlay={<PageDots />}>
             <Overview />
             <Board />
             <Calendar />
@@ -102,7 +129,6 @@ function Dashboard() {
             <Notes />
           </Pager>
         </View>
-        <PageDots />
       </View>
     </View>
   );
@@ -110,6 +136,7 @@ function Dashboard() {
 
 function Root() {
   const t = useTheme();
+  useLandscapeLock();
   const hydrated = useAppStore((s) => s.hydrated);
   const [fontsLoaded] = useFonts({
     PlusJakartaSans_400Regular,

@@ -300,7 +300,9 @@ export function ProgressRing({
   label: string;
 }) {
   const t = useTheme();
-  const thickness = size * 0.3;
+  // The design masks the conic dial with `closest-side transparent 70%`, so the
+  // visible ring is 30% of the radius.
+  const thickness = size * 0.15;
   const r = (size - thickness) / 2;
   const circumference = 2 * Math.PI * r;
   const value = useSharedValue(progress);

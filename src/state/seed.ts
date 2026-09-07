@@ -85,13 +85,18 @@ const EVENT_ROTATIONS: Omit<CalEvent, 'id'>[][] = [
     { title: 'Deep work — motion spec', time: '11:30', meta: '2 hours · no notifications', color: accent.lime },
     { title: 'Design review · Hamna', time: '14:30', meta: '1 hour · FaceTime', color: accent.cyan },
     { title: 'Strength session', time: '18:30', meta: '1 hour · Cult', color: accent.lime },
+    { title: 'Read 20 pages', time: '22:00', meta: 'Before bed', color: accent.violet },
   ],
   [
     { title: 'Sprint planning', time: '11:00', meta: '45 min · Discord', color: accent.violet },
+    { title: 'Deep work — swipe physics', time: '13:00', meta: '2 hours · no notifications', color: accent.lime },
     { title: 'Physio', time: '17:00', meta: '40 min · Indiranagar', color: accent.cyan },
+    { title: 'Journal', time: '22:15', meta: '5 min · evening', color: accent.violet },
   ],
   [
     { title: 'Deep work — kanban physics', time: '09:30', meta: '3 hours', color: accent.lime },
+    { title: 'Recap post draft', time: '14:00', meta: '45 min · Clipstake', color: accent.violet },
+    { title: 'Strength session', time: '18:30', meta: '1 hour · Cult', color: accent.lime },
     { title: 'Dinner with Hamna', time: '20:00', meta: '2 hours · Omakase', color: accent.violet },
   ],
 ];

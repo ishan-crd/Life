@@ -70,8 +70,16 @@ export function Calendar() {
     [cells]
   );
 
+  /** An evening counts as free when nothing is booked between 18:00 and 22:00. */
   const freeEvenings = useMemo(
-    () => cells.filter((c) => c.inMonth && !c.events.some((e) => Number(e.time.split(':')[0]) >= 18)).length,
+    () =>
+      cells.filter((c) => {
+        if (!c.inMonth) return false;
+        return !c.events.some((e) => {
+          const hour = Number(e.time.split(':')[0]);
+          return hour >= 18 && hour < 22;
+        });
+      }).length,
     [cells]
   );
 

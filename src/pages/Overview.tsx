@@ -353,8 +353,8 @@ export function Overview() {
             <Legend color={accent.limeChart} label="Kept" />
             <Legend color="#4b4a53" label="Missed" muted />
           </View>
-          <View style={{ flex: 1, marginTop: 10, minHeight: 120 }}>
-            <ConsistencyChart theme={t} height="100%" />
+          <View style={{ marginTop: 10, height: 176 }}>
+            <ConsistencyChart theme={t} height={176} />
             <View style={{ position: 'absolute', right: 2, top: 20 }}>
               <ChartBadge color={accent.limeChart} label="92% kept" />
             </View>
@@ -381,9 +381,9 @@ export function Overview() {
               </Txt>
             ))}
           </View>
-          <View style={{ flex: 1, marginTop: 8, gap: 7 }}>
+          <View style={{ marginTop: 8, gap: 7 }}>
             {HEAT.map((row, r) => (
-              <View key={r} style={{ flex: 1, flexDirection: 'row', gap: 7, alignItems: 'center' }}>
+              <View key={r} style={{ flexDirection: 'row', gap: 7, alignItems: 'center' }}>
                 <Txt size={12} color={t.muted2} style={{ width: 42 }}>
                   {r + 1} pm
                 </Txt>
@@ -393,8 +393,7 @@ export function Overview() {
                     delay={150 + (r + c) * 25}
                     style={{
                       flex: 1,
-                      minHeight: 22,
-                      alignSelf: 'stretch',
+                      height: 32,
                       borderRadius: 9,
                       backgroundColor: t.heat[v as 1 | 2 | 3 | 4 | 5],
                     }}
@@ -404,7 +403,13 @@ export function Overview() {
             ))}
           </View>
           <View
-            style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              gap: 8,
+              marginTop: 16,
+            }}
           >
             <Txt size={12} color={t.muted2}>
               Less
