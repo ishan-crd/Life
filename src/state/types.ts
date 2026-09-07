@@ -63,6 +63,19 @@ export interface CalEvent {
 /** Events bucketed by `YYYY-MM-DD`. */
 export type EventMap = Record<string, CalEvent[]>;
 
+export interface ProteinEntry {
+  id: string;
+  /** What it was — "Protein bar", "Whey shake". */
+  label: string;
+  /** Grams of protein in it. */
+  grams: number;
+  /** Tag colour, from the same accent set the calendar uses. */
+  color: string;
+}
+
+/** Protein logs bucketed by `YYYY-MM-DD`, keyed like `EventMap`. */
+export type ProteinMap = Record<string, ProteinEntry[]>;
+
 export interface WeekSplitRow {
   id: string;
   label: string;

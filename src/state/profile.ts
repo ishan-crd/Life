@@ -19,6 +19,7 @@ export interface OnboardingAnswers {
   rituals: string[];
   waterGoal: number;
   stepGoal: number;
+  proteinGoal: number;
   wakeTime: string;
 }
 

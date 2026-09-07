@@ -18,7 +18,8 @@ export type IconName =
   | 'plus'
   | 'check'
   | 'trash'
-  | 'close';
+  | 'close'
+  | 'bolt';
 
 interface IconProps extends SvgProps {
   name: IconName;
@@ -117,6 +118,9 @@ export const Icon = React.memo(function Icon({
       {name === 'plus' && <Path {...stroke} strokeWidth={2.2} d="M12 5v14M5 12h14" />}
       {name === 'close' && <Path {...stroke} strokeWidth={2.2} d="M6 6l12 12M18 6L6 18" />}
       {name === 'check' && <Path {...stroke} strokeWidth={3.4} d="M4 12.5 9.5 18 20 6.5" />}
+      {name === 'bolt' && (
+        <Path {...stroke} strokeWidth={1.8} d="M13.4 2.8 4.8 13.4h6L10.6 21.2 19.2 10.6h-6z" />
+      )}
       {name === 'trash' && (
         <G {...stroke} strokeWidth={1.8}>
           <Path d="M4 7h16" />

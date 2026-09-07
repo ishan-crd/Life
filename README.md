@@ -1,8 +1,8 @@
 # Life
 
-An iPad-first life dashboard built with Expo (SDK 57) and React Native, replicated end to
-end from the `Life Dashboard Dark.dc.html` Claude Design file: five full-bleed pages you
-swipe between, dark and light themes, and local-first data for everything you track.
+A life dashboard built with Expo (SDK 57) and React Native, replicated end to end from the
+`Life Dashboard Dark.dc.html` Claude Design file: five full-bleed pages you swipe between,
+dark and light themes, and local-first data for everything you track.
 
 <img src="docs/overview.png" alt="Overview page" width="820" />
 
@@ -10,14 +10,15 @@ swipe between, dark and light themes, and local-first data for everything you tr
 
 | Page | What it does |
 | --- | --- |
-| **Overview** | Greeting, day/week/month range, today's plan, focus timer, deep-work bars, consistency chart, focus heatmap and today's agenda. |
+| **Overview** | Greeting, day/week/month range, today's plan, focus timer, today's protein against your goal, deep-work bars, consistency chart, focus heatmap and today's agenda. |
 | **Board** | Three-column kanban with long-press drag between columns, per-card editing, plus the "Every day" ritual checklist and its progress dial. |
-| **Calendar** | Month grid with event dots, month navigation, a day detail pane with full event CRUD, and the week-split meters. |
+| **Calendar** | Month grid with event dots and the day's protein grams, month navigation, a day detail pane with full event CRUD and a per-day protein log, and the week-split meters. |
 | **Habits** | Weekly habit dot grid, meds & pills with a progress ring, sleep, water and step tiles. |
 | **Notes** | Masonry note wall with inline editing, tags and sizes. |
 
 Plus a sign-in screen (**Sign in with Apple** and email) and a six-step onboarding flow
-that asks what you're chasing and seeds your rituals, focus block length and health goals.
+that asks what you're chasing and seeds your rituals, focus block length and health goals
+(water, protein and steps).
 
 ## Running it
 
@@ -73,6 +74,13 @@ with [`insyd-bottom-sheet`](https://www.npmjs.com/package/insyd-bottom-sheet)'s
 `SmoothSheet`, which brings the drag handle, drag-to-dismiss, backdrop tap and keyboard
 avoidance. `<SheetHost>` is mounted in `App.tsx` below `ThemeProvider` so portaled sheet
 content still resolves the palette.
+
+**Protein.** Every logged item — a label and its grams, tagged Meal, Shake or Snack — is
+bucketed by `YYYY-MM-DD` in `protein`, exactly the way `events` is, so the tracker and the
+calendar are the same data seen twice: the month grid prints each day's total, the day pane
+logs against it, and the overview shows today's. The daily goal comes from onboarding and is
+retunable by tapping any total. Days before today are backfilled once per month, the same as
+the sample agenda; today and everything ahead of it start empty.
 
 **Data.** There is no backend. Two zustand stores persist to `AsyncStorage`: one for the
 dashboard, one for the account and onboarding answers. Sign in with Apple uses

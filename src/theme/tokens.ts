@@ -60,6 +60,12 @@ export interface Theme {
   heatLegend: readonly [string, string, string, string];
   /** Low-emphasis bars (the "Workouts" group) — a muted tint of the accent. */
   barMuted: string;
+  /**
+   * Nutrition accent — protein meters, chips and the grams on a calendar day.
+   * Lime is the design's "body & health" accent; the light value is darkened
+   * because raw lime text is unreadable on a white card.
+   */
+  protein: string;
   /** The neutral "Missed" swatch in the consistency legend. */
   legendMuted: string;
   sleepIdle: string;
@@ -112,6 +118,7 @@ export const darkTheme: Theme = {
   heat: { 1: '#241d47', 2: '#4b31a8', 3: '#8b6bf7', 4: '#e6dffb', 5: '#cbb9fb' },
   heatLegend: ['#2a2350', '#4b31a8', '#6d3bf5', '#a78bfa'],
   barMuted: '#3d2a76',
+  protein: '#d9f24a',
   legendMuted: '#4b4a53',
   sleepIdle: '#2f2952',
   glassEmpty: '#232228',
@@ -163,6 +170,7 @@ export const lightTheme: Theme = {
   heat: { 1: '#ece8fb', 2: '#c3b1fa', 3: '#8b6bf7', 4: '#4b31a8', 5: '#6d3bf5' },
   heatLegend: ['#ece8fb', '#c3b1fa', '#8b6bf7', '#4b31a8'],
   barMuted: '#c3b1fa',
+  protein: '#5f6f0a',
   legendMuted: '#b8b9c4',
   sleepIdle: '#e3e0f6',
   glassEmpty: '#e8e9ef',

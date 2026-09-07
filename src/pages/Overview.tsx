@@ -4,6 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { ConsistencyChart } from '@/components/ConsistencyChart';
 import { FadeCell, GrowBar, GrowBarX } from '@/components/GrowBar';
 import { Icon } from '@/components/Icon';
+import { ProteinToday } from '@/components/Protein';
 import { RiseIn } from '@/components/RiseIn';
 import { useSheet } from '@/components/Sheet';
 import { Touchable } from '@/components/Touchable';
@@ -237,6 +238,7 @@ export function Overview() {
               onPress={openTimerOptions}
             />
           </View>
+          <ProteinToday dateKey={todayKey} />
         </View>
 
         <View style={{ flex: 1, borderLeftWidth: 1, borderLeftColor: t.lineSoft, paddingLeft: 20 }}>

@@ -7,6 +7,7 @@ import {
   seedHabits,
   seedMeds,
   seedMonthEvents,
+  seedMonthProtein,
   seedNotes,
   seedTasks,
   seedWeekSplit,
@@ -20,6 +21,8 @@ import type {
   Habit,
   Med,
   Note,
+  ProteinEntry,
+  ProteinMap,
   Task,
   WeekSplitRow,
 } from './types';
@@ -45,6 +48,7 @@ export interface AppState {
   meds: Med[];
   notes: Note[];
   events: EventMap;
+  protein: ProteinMap;
   weekSplit: WeekSplitRow[];
 
   water: number;
@@ -54,6 +58,7 @@ export interface AppState {
   sleepMinutes: number;
   sleepWeek: number[];
   streak: number;
+  proteinGoal: number;
 
   selectedDate: string | null;
 
@@ -96,12 +101,18 @@ export interface AppState {
   removeEvent(dateKey: string, id: string): void;
   selectDate(dateKey: string | null): void;
 
+  addProtein(dateKey: string, input: Omit<ProteinEntry, 'id'>): void;
+  updateProtein(dateKey: string, id: string, patch: Partial<Omit<ProteinEntry, 'id'>>): void;
+  removeProtein(dateKey: string, id: string): void;
+  setProteinGoal(grams: number): void;
+
   addWater(): void;
 
   applyOnboarding(input: {
     rituals: string[];
     waterGoal: number;
     stepGoal: number;
+    proteinGoal: number;
     focusHours: number;
   }): void;
 
@@ -121,6 +132,11 @@ export function tagColor(tag: string): string {
   return NOTE_TAGS[tag] ?? accent.violet;
 }
 
+/** Grams logged on one day. Undefined (nothing logged) reads as zero. */
+export function proteinTotal(entries: ProteinEntry[] | undefined): number {
+  return entries ? entries.reduce((n, e) => n + e.grams, 0) : 0;
+}
+
 const initial = {
   light: false,
   page: 0,
@@ -135,6 +151,7 @@ const initial = {
   meds: seedMeds,
   notes: seedNotes,
   events: {} as EventMap,
+  protein: {} as ProteinMap,
   weekSplit: seedWeekSplit,
   water: 5,
   waterGoal: 8,
@@ -143,6 +160,7 @@ const initial = {
   sleepMinutes: 440,
   sleepWeek: [62, 78, 55, 88, 70, 96, 74],
   streak: 17,
+  proteinGoal: 150,
   selectedDate: null,
 };
 
@@ -262,9 +280,16 @@ export const useAppStore = create<AppState>()(
       removeNote: (id) => set((s) => ({ notes: s.notes.filter((n) => n.id !== id) })),
 
       ensureMonth: (year, month) => {
-        const fresh = seedMonthEvents(year, month, get().events);
-        if (Object.keys(fresh).length === 0) return;
-        set((s) => ({ events: { ...s.events, ...fresh } }));
+        const { events, protein } = get();
+        const freshEvents = seedMonthEvents(year, month, events);
+        const freshProtein = seedMonthProtein(year, month, protein);
+        const hasEvents = Object.keys(freshEvents).length > 0;
+        const hasProtein = Object.keys(freshProtein).length > 0;
+        if (!hasEvents && !hasProtein) return;
+        set((s) => ({
+          events: hasEvents ? { ...s.events, ...freshEvents } : s.events,
+          protein: hasProtein ? { ...s.protein, ...freshProtein } : s.protein,
+        }));
       },
       addEvent: (key, input) =>
         set((s) => ({
@@ -288,10 +313,28 @@ export const useAppStore = create<AppState>()(
         set((s) => ({ events: { ...s.events, [key]: (s.events[key] ?? []).filter((e) => e.id !== id) } })),
       selectDate: (selectedDate) => set({ selectedDate }),
 
+      addProtein: (key, input) =>
+        set((s) => ({
+          protein: { ...s.protein, [key]: [...(s.protein[key] ?? []), { ...input, id: uid('p') }] },
+        })),
+      updateProtein: (key, id, patch) =>
+        set((s) => ({
+          protein: {
+            ...s.protein,
+            [key]: (s.protein[key] ?? []).map((e) => (e.id === id ? { ...e, ...patch } : e)),
+          },
+        })),
+      removeProtein: (key, id) =>
+        set((s) => ({
+          protein: { ...s.protein, [key]: (s.protein[key] ?? []).filter((e) => e.id !== id) },
+        })),
+      /** A goal of zero would make every day 0% — keep at least one gram. */
+      setProteinGoal: (grams) => set({ proteinGoal: Math.max(1, Math.round(grams)) }),
+
       addWater: () => set((s) => ({ water: s.water >= s.waterGoal ? 0 : s.water + 1 })),
 
       /** Seeds the dashboard from the answers collected during onboarding. */
-      applyOnboarding: ({ rituals, waterGoal, stepGoal, focusHours }) =>
+      applyOnboarding: ({ rituals, waterGoal, stepGoal, proteinGoal, focusHours }) =>
         set((s) => ({
           tasks: rituals.length
             ? rituals.map((label, i) => ({
@@ -304,12 +347,13 @@ export const useAppStore = create<AppState>()(
           waterGoal,
           water: Math.min(s.water, waterGoal),
           stepGoal,
+          proteinGoal,
           focusTotal: Math.max(15, Math.min(90, Math.round((focusHours * 60) / 2))) * 60,
           focusLeft: Math.max(15, Math.min(90, Math.round((focusHours * 60) / 2))) * 60,
         })),
 
       /** Wipes the dashboard back to its seed — used when an account signs out. */
-      resetAll: () => set({ ...initial, events: {} }),
+      resetAll: () => set({ ...initial, events: {}, protein: {} }),
     }),
     {
       name: 'life-dashboard-v1',

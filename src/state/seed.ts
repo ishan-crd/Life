@@ -1,5 +1,16 @@
 import { dateKey, daysInMonth } from '@/lib/date';
-import type { BoardColumn, CalEvent, EventMap, Habit, Med, Note, Task, WeekSplitRow } from './types';
+import type {
+  BoardColumn,
+  CalEvent,
+  EventMap,
+  Habit,
+  Med,
+  Note,
+  ProteinEntry,
+  ProteinMap,
+  Task,
+  WeekSplitRow,
+} from './types';
 import { accent } from '@/theme';
 
 export const seedTasks: Task[] = [
@@ -108,6 +119,45 @@ export function seedMonthEvents(year: number, month: number, existing: EventMap)
     const key = dateKey(year, month, day);
     if (existing[key]) continue;
     next[key] = EVENT_ROTATIONS[day % 3].map((e, i) => ({ ...e, id: `${key}_${i}` }));
+  }
+  return next;
+}
+
+/** Three days of eating, rotated the same way the agenda is. */
+const PROTEIN_ROTATIONS: Omit<ProteinEntry, 'id'>[][] = [
+  [
+    { label: 'Greek yogurt', grams: 18, color: accent.lime },
+    { label: 'Protein bar', grams: 10, color: accent.violet },
+    { label: 'Chicken bowl', grams: 42, color: accent.lime },
+    { label: 'Whey shake', grams: 26, color: accent.cyan },
+  ],
+  [
+    { label: 'Eggs on toast', grams: 22, color: accent.lime },
+    { label: 'Paneer wrap', grams: 28, color: accent.lime },
+    { label: 'Whey shake', grams: 26, color: accent.cyan },
+  ],
+  [
+    { label: 'Protein bar', grams: 10, color: accent.violet },
+    { label: 'Dal & rice', grams: 16, color: accent.lime },
+    { label: 'Grilled fish', grams: 38, color: accent.lime },
+    { label: 'Curd', grams: 11, color: accent.cyan },
+  ],
+];
+
+/**
+ * Backfills a month's protein log. Only days *before* today are seeded — today
+ * and anything ahead of it stay empty so what you log there is yours.
+ */
+export function seedMonthProtein(year: number, month: number, existing: ProteinMap): ProteinMap {
+  const next: ProteinMap = {};
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const total = daysInMonth(year, month);
+  for (let day = 1; day <= total; day += 1) {
+    if (new Date(year, month, day) >= startOfToday) break;
+    const key = dateKey(year, month, day);
+    if (existing[key]) continue;
+    next[key] = PROTEIN_ROTATIONS[day % 3].map((e, i) => ({ ...e, id: `${key}_p${i}` }));
   }
   return next;
 }

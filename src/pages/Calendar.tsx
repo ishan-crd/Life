@@ -1,13 +1,14 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { PageHeader } from '@/components/PageHeader';
+import { ProteinDayLog } from '@/components/Protein';
 import { RiseIn } from '@/components/RiseIn';
 import { useSheet } from '@/components/Sheet';
 import { Touchable } from '@/components/Touchable';
 import { Meter, RoundButton, StatChip, Txt } from '@/components/ui';
 import { dateKey, daysInMonth, fmtLongDate, fmtMonth, monthLead, to12h } from '@/lib/date';
 import { useNow } from '@/lib/useNow';
-import { useAppStore } from '@/state/store';
+import { proteinTotal, useAppStore } from '@/state/store';
 import type { CalEvent } from '@/state/types';
 import { accent, radius, space, useTheme } from '@/theme';
 
@@ -30,6 +31,7 @@ export function Calendar() {
   const addEvent = useAppStore((s) => s.addEvent);
   const updateEvent = useAppStore((s) => s.updateEvent);
   const removeEvent = useAppStore((s) => s.removeEvent);
+  const protein = useAppStore((s) => s.protein);
   const selectedDate = useAppStore((s) => s.selectedDate);
   const selectDate = useAppStore((s) => s.selectDate);
   const weekSplit = useAppStore((s) => s.weekSplit);
@@ -58,9 +60,16 @@ export function Calendar() {
         const dayNum = i - lead + 1;
         const inMonth = dayNum >= 1 && dayNum <= total;
         const key = inMonth ? dateKey(year, month, dayNum) : null;
-        return { i, dayNum, inMonth, key, events: key ? events[key] ?? [] : [] };
+        return {
+          i,
+          dayNum,
+          inMonth,
+          key,
+          events: key ? events[key] ?? [] : [],
+          grams: key ? proteinTotal(protein[key]) : 0,
+        };
       }),
-    [lead, total, year, month, events]
+    [lead, total, year, month, events, protein]
   );
 
   const monthEventCount = useMemo(
@@ -191,14 +200,33 @@ export function Calendar() {
                         borderColor: isSel ? 'transparent' : isToday ? accent.purple : t.line,
                       }}
                     >
-                      <Txt
-                        size={14}
-                        weight="semibold"
-                        color={isSel ? t.daySelInk : t.ink}
-                        style={{ opacity: cell.inMonth ? 1 : 0.32 }}
+                      <View
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: 4,
+                        }}
                       >
-                        {cell.inMonth ? String(cell.dayNum) : ''}
-                      </Txt>
+                        <Txt
+                          size={14}
+                          weight="semibold"
+                          color={isSel ? t.daySelInk : t.ink}
+                          style={{ opacity: cell.inMonth ? 1 : 0.32 }}
+                        >
+                          {cell.inMonth ? String(cell.dayNum) : ''}
+                        </Txt>
+                        {cell.grams > 0 ? (
+                          <Txt
+                            size={11}
+                            weight="semibold"
+                            color={isSel ? t.daySelInk : t.protein}
+                            numberOfLines={1}
+                          >
+                            {cell.grams}g
+                          </Txt>
+                        ) : null}
+                      </View>
                       <View style={{ flexDirection: 'row', gap: 4 }}>
                         {cell.events.slice(0, 3).map((e) => (
                           <View
@@ -240,12 +268,13 @@ export function Calendar() {
                 marginBottom: 12,
               }}
             >
-              <View>
-                <Txt size={17} weight="medium" tracking={-0.02}>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Txt size={17} weight="medium" tracking={-0.02} numberOfLines={1}>
                   {fmtLongDate(selDate)}
                 </Txt>
                 <Txt size={13} color={t.muted2} style={{ marginTop: 3 }}>
-                  {selEvents.length} {selEvents.length === 1 ? 'event' : 'events'}
+                  {selEvents.length} {selEvents.length === 1 ? 'event' : 'events'} ·{' '}
+                  {proteinTotal(protein[selKey])} g protein
                 </Txt>
               </View>
               <RoundButton
@@ -256,6 +285,8 @@ export function Calendar() {
                 onPress={() => openEventSheet()}
               />
             </View>
+            <ProteinDayLog dateKey={selKey} subtitle={fmtLongDate(selDate)} />
+
             <ScrollView style={{ flex: 1 }} contentContainerStyle={{ gap: 9 }} showsVerticalScrollIndicator={false}>
               {selEvents.map((ev) => (
                 <Touchable

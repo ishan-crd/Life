@@ -54,6 +54,7 @@ const FOCUS_CHOICES = [
 
 const WATER_CHOICES = [6, 8, 10, 12];
 const STEP_CHOICES = [6000, 8000, 10000, 12000];
+const PROTEIN_CHOICES = [90, 120, 150, 180];
 
 const STEP_COUNT = 6;
 
@@ -71,6 +72,7 @@ export function Onboarding() {
   const [rituals, setRituals] = useState<string[]>([]);
   const [waterGoal, setWaterGoal] = useState(8);
   const [stepGoal, setStepGoal] = useState(10000);
+  const [proteinGoal, setProteinGoal] = useState(150);
   const [wakeTime, setWakeTime] = useState('07:00');
 
   const suggestedRituals = useMemo(
@@ -92,11 +94,23 @@ export function Onboarding() {
       rituals,
       waterGoal,
       stepGoal,
+      proteinGoal,
       wakeTime,
     };
-    applyOnboarding({ rituals, waterGoal, stepGoal, focusHours });
+    applyOnboarding({ rituals, waterGoal, stepGoal, proteinGoal, focusHours });
     completeOnboarding(answers, name.trim());
-  }, [goals, focusHours, rituals, waterGoal, stepGoal, wakeTime, applyOnboarding, completeOnboarding, name]);
+  }, [
+    goals,
+    focusHours,
+    rituals,
+    waterGoal,
+    stepGoal,
+    proteinGoal,
+    wakeTime,
+    applyOnboarding,
+    completeOnboarding,
+    name,
+  ]);
 
   const next = useCallback(() => {
     if (!canAdvance) return;
@@ -281,13 +295,28 @@ export function Onboarding() {
         ) : null}
 
         {step === 4 ? (
-          <Step title="Set your health targets" subtitle="Water, steps and the hour you like to start.">
+          <Step title="Set your health targets" subtitle="Water, protein, steps and the hour you like to start.">
             <Txt size={14} weight="semibold" style={{ marginTop: 4, marginBottom: 10 }}>
               Glasses of water a day
             </Txt>
             <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
               {WATER_CHOICES.map((n, i) => (
                 <Pillet key={n} index={i} label={`${n}`} selected={waterGoal === n} onPress={() => setWaterGoal(n)} />
+              ))}
+            </View>
+
+            <Txt size={14} weight="semibold" style={{ marginTop: 26, marginBottom: 10 }}>
+              Protein a day
+            </Txt>
+            <View style={{ flexDirection: 'row', gap: 10, flexWrap: 'wrap' }}>
+              {PROTEIN_CHOICES.map((n, i) => (
+                <Pillet
+                  key={n}
+                  index={i}
+                  label={`${n} g`}
+                  selected={proteinGoal === n}
+                  onPress={() => setProteinGoal(n)}
+                />
               ))}
             </View>
 
@@ -323,7 +352,7 @@ export function Onboarding() {
               <SummaryCard title="Goals" value={`${goals.length} chosen`} detail={goals.map((g) => GOALS.find((x) => x.key === g)?.label).join(' · ')} />
               <SummaryCard title="Deep work" value={`${focusHours} h / day`} detail={`${Math.max(15, Math.min(90, Math.round((focusHours * 60) / 2)))} min focus blocks`} />
               <SummaryCard title="Rituals" value={`${rituals.length} daily`} detail={rituals.slice(0, 3).join(' · ')} />
-              <SummaryCard title="Health" value={`${waterGoal} glasses · ${(stepGoal / 1000).toFixed(0)}k steps`} detail={`Wake around ${wakeTime}`} />
+              <SummaryCard title="Health" value={`${waterGoal} glasses · ${(stepGoal / 1000).toFixed(0)}k steps`} detail={`${proteinGoal} g protein · wake around ${wakeTime}`} />
             </View>
             <View style={{ alignItems: 'center', marginTop: 34 }}>
               <SuccessMark />
