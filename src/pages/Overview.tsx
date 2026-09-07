@@ -35,6 +35,10 @@ export function Overview() {
   const resetWidgets = useAppStore((s) => s.resetWidgets);
 
   const [editing, setEditing] = useState(false);
+  const [viewport, setViewport] = useState(0);
+
+  const padTop = compact ? 14 : 20;
+  const padBottom = 30;
 
   const startEditing = useCallback(() => setEditing(true), []);
   const stopEditing = useCallback(() => setEditing(false), []);
@@ -180,11 +184,13 @@ export function Overview() {
       <RiseIn delay={100} style={{ flex: 1, borderTopWidth: 1, borderTopColor: t.lineSoft }}>
         <ScrollView
           style={{ flex: 1 }}
-          contentContainerStyle={{ paddingTop: compact ? 14 : 20, paddingBottom: 30 }}
+          contentContainerStyle={{ paddingTop: padTop, paddingBottom: padBottom }}
           showsVerticalScrollIndicator={false}
+          onLayout={(e) => setViewport(e.nativeEvent.layout.height)}
         >
           <WidgetGrid
             order={widgets}
+            fillHeight={viewport ? viewport - padTop - padBottom : undefined}
             sizeOf={widgetSize}
             render={render}
             editing={editing}

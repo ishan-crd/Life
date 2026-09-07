@@ -81,9 +81,9 @@ export function PlanWidget() {
       <View style={{ flex: 1, justifyContent: 'space-between' }}>
         <View>
           <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 9 }}>
-            <Txt size={compact ? 34 : 42} weight="medium" tracking={-0.035} lineHeight={1}>
+            <Txt size={compact ? 30 : 38} weight="medium" tracking={-0.035} lineHeight={1}>
               {done}
-              <Txt size={compact ? 34 : 42} weight="medium" tracking={-0.035} color={t.muted4}>
+              <Txt size={compact ? 30 : 38} weight="medium" tracking={-0.035} color={t.muted4}>
                 /{tasks.length}
               </Txt>
             </Txt>
@@ -91,7 +91,7 @@ export function PlanWidget() {
               {pct}% done
             </Txt>
           </View>
-          <Txt size={13} color={t.muted2} style={{ marginTop: 10 }}>
+          <Txt size={13} color={t.muted2} style={{ marginTop: 8 }}>
             {'Focus today '}
             <Txt size={13} weight="semibold" color={t.ink}>
               {fmtDuration(logged)}
@@ -205,8 +205,8 @@ export function DeepWorkWidget() {
           <Pill paddingH={12} paddingV={6}>{`Average ${fmtDuration(average)}`}</Pill>
         </View>
 
-        <View style={{ flexDirection: 'row', gap: compact ? 10 : 16, alignItems: 'flex-end', flex: 1, paddingTop: 12 }}>
-          <View style={{ flex: 1.02, paddingRight: compact ? 8 : 16 }}>
+        <View style={{ flexDirection: 'row', gap: compact ? 10 : 16, alignItems: 'stretch', flex: 1, minHeight: 0, paddingTop: 10 }}>
+          <View style={{ flex: 1.02, alignSelf: 'stretch', paddingRight: compact ? 8 : 16 }}>
             <Txt size={13} style={{ marginBottom: 10 }}>
               <Txt size={13} weight="semibold">
                 {ritualPct}%
@@ -215,8 +215,8 @@ export function DeepWorkWidget() {
                 {' Rituals'}
               </Txt>
             </Txt>
-            <View style={{ height: 38, width: `${Math.max(4, ritualPct)}%` }}>
-              <GrowBarX delay={200} duration={800} style={{ height: 38, borderRadius: radius.chip, overflow: 'hidden' }}>
+            <View style={{ flex: 1, minHeight: 24, maxHeight: 46, width: `${Math.max(4, ritualPct)}%` }}>
+              <GrowBarX delay={200} duration={800} style={{ flex: 1, borderRadius: radius.chip, overflow: 'hidden' }}>
                 <LinearGradient
                   colors={[accent.purpleSoft, accent.purpleDeep]}
                   start={{ x: 0, y: 0 }}
@@ -227,7 +227,7 @@ export function DeepWorkWidget() {
             </View>
           </View>
 
-          <View style={{ flex: 1, paddingRight: compact ? 8 : 16 }}>
+          <View style={{ flex: 1, alignSelf: 'stretch', paddingRight: compact ? 8 : 16 }}>
             <Txt size={13} style={{ marginBottom: 10 }}>
               <Txt size={13} weight="semibold">
                 {fmtDuration(total)}
@@ -236,10 +236,10 @@ export function DeepWorkWidget() {
                 {' Deep work'}
               </Txt>
             </Txt>
-            <BarGroup bars={bars} height={compact ? 44 : 58} />
+            <BarGroup bars={bars} />
           </View>
 
-          <View style={{ flex: 0.42 }}>
+          <View style={{ flex: 0.42, alignSelf: 'stretch' }}>
             <Txt size={13} style={{ marginBottom: 10 }}>
               <Txt size={13} weight="semibold">
                 {habitsKept}
@@ -248,7 +248,7 @@ export function DeepWorkWidget() {
                 {' Habits'}
               </Txt>
             </Txt>
-            <BarGroup bars={habitBars} height={compact ? 40 : 52} color={t.barMuted} />
+            <BarGroup bars={habitBars} color={t.barMuted} />
           </View>
         </View>
 
@@ -511,15 +511,13 @@ interface Bar {
 /** A row of bottom-anchored bars that grow in on mount. */
 const BarGroup = React.memo(function BarGroup({
   bars,
-  height,
   color,
 }: {
   bars: Bar[];
-  height: number;
   color?: string;
 }) {
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 4, height }}>
+    <View style={{ flex: 1, minHeight: 26, flexDirection: 'row', alignItems: 'flex-end', gap: 4 }}>
       {bars.map((b, i) => (
         <View key={i} style={{ flex: 1, height: `${b.h}%` }}>
           <GrowBar delay={b.delay} style={{ flex: 1, borderRadius: 4, backgroundColor: b.c ?? color ?? accent.violetInk }} />

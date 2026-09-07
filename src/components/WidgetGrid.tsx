@@ -39,6 +39,11 @@ export interface WidgetSize {
  * Shelf packing, the way the iOS home screen fills a page: walk the order,
  * place each widget on the current line while it fits, then start a new line
  * whose height is the tallest widget on the line above.
+ *
+ * Two rules keep a page from looking half-empty. A widget too wide for what is
+ * left of a line is narrowed to fit it rather than pushed onto the next one,
+ * and the last widget stretches over any columns nothing else claimed. So
+ * every line is full, whatever mix of sizes is on the page.
  */
 export function packWidgets(
   order: WidgetKey[],
@@ -47,20 +52,29 @@ export function packWidgets(
   colWidth: number,
   rowHeight: number,
   gap: number
-): { slots: Slot[]; height: number } {
+): { slots: Slot[]; height: number; rowUnits: number; gapTotal: number } {
   const slots: Slot[] = [];
   let col = 0;
   let y = 0;
   let shelfRows = 0;
+  let rowUnits = 0;
+  let gapTotal = 0;
+
+  const closeShelf = () => {
+    rowUnits += shelfRows;
+    gapTotal += (shelfRows - 1) * gap;
+  };
 
   for (const key of order) {
-    const { span: rawSpan, rows } = sizeOf(key);
-    const span = Math.max(1, Math.min(columns, rawSpan));
-    if (col + span > columns) {
+    if (col >= columns) {
       y += shelfRows * rowHeight + (shelfRows - 1) * gap + gap;
+      closeShelf();
+      gapTotal += gap;
       col = 0;
       shelfRows = 0;
     }
+    const { span: preferred, rows } = sizeOf(key);
+    const span = Math.max(1, Math.min(preferred, columns - col));
     slots.push({
       x: col * (colWidth + gap),
       y,
@@ -71,7 +85,34 @@ export function packWidgets(
     shelfRows = Math.max(shelfRows, rows);
   }
 
-  return { slots, height: shelfRows ? y + shelfRows * rowHeight + (shelfRows - 1) * gap : 0 };
+  if (!slots.length) return { slots, height: 0, rowUnits: 0, gapTotal: 0 };
+
+  // Nothing claimed the rest of the last line, so the last widget takes it.
+  if (col < columns) {
+    const last = slots[slots.length - 1];
+    last.w += (columns - col) * (colWidth + gap);
+  }
+  closeShelf();
+
+  return {
+    slots,
+    height: y + shelfRows * rowHeight + (shelfRows - 1) * gap,
+    rowUnits,
+    gapTotal,
+  };
+}
+
+/**
+ * A row can be as short as this before the page scrolls instead of squeezing,
+ * and no taller than this however much room there is.
+ */
+const MIN_ROW = 78;
+const MAX_ROW = 168;
+
+/** The row height that makes `rowUnits` rows and their gaps fill `available`. */
+export function fitRowHeight(available: number, rowUnits: number, gapTotal: number): number {
+  if (rowUnits <= 0) return MIN_ROW;
+  return Math.max(MIN_ROW, Math.min(MAX_ROW, (available - gapTotal) / rowUnits));
 }
 
 /** Moves one entry, the way a dragged widget pushes the others along. */
@@ -84,6 +125,12 @@ export function moveItem<T>(list: T[], from: number, to: number): T[] {
 
 interface WidgetGridProps {
   order: WidgetKey[];
+  /**
+   * Height the grid should fill, when it can. The page used to be a flex
+   * column that always reached the bottom of the screen; rows stretch or
+   * compress to keep doing that before the page starts scrolling.
+   */
+  fillHeight?: number;
   sizeOf(key: WidgetKey): WidgetSize;
   render(key: WidgetKey): React.ReactNode;
   editing: boolean;
@@ -103,6 +150,7 @@ interface WidgetGridProps {
  */
 export function WidgetGrid({
   order,
+  fillHeight,
   sizeOf,
   render,
   editing,
@@ -125,10 +173,15 @@ export function WidgetGrid({
   }
 
   const colWidth = width ? (width - gap * (columns - 1)) / columns : 0;
-  const { slots, height } = useMemo(
-    () => packWidgets(live, sizeOf, columns, colWidth, rowHeight, gap),
-    [live, sizeOf, columns, colWidth, rowHeight, gap]
-  );
+
+  const { slots, height } = useMemo(() => {
+    const base = packWidgets(live, sizeOf, columns, colWidth, rowHeight, gap);
+    if (!fillHeight || !base.rowUnits) return base;
+    // Pack once to learn how many rows the page is, then again at the height
+    // that makes those rows fill the space.
+    const fitted = fitRowHeight(fillHeight, base.rowUnits, base.gapTotal);
+    return packWidgets(live, sizeOf, columns, colWidth, fitted, gap);
+  }, [live, sizeOf, columns, colWidth, rowHeight, gap, fillHeight]);
 
   /** Slot rectangles on the UI thread, so the hit test never crosses to JS. */
   const slotsSV = useSharedValue<Slot[]>([]);

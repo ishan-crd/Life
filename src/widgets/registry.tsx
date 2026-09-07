@@ -60,7 +60,7 @@ export const WIDGETS: Record<WidgetKey, WidgetMeta> = {
     blurb: 'Habits kept versus missed, month by month',
     icon: 'smile',
     span: 1,
-    rows: 2,
+    rows: 3,
     Component: ConsistencyWidget,
   },
   heatmap: {

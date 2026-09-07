@@ -15,7 +15,10 @@ export interface Layout {
   /** Phone-sized, in either orientation. */
   compact: boolean;
   landscape: boolean;
-  /** Columns in the home-page widget grid. */
+  /**
+   * Columns in the home-page widget grid. It stops at three because that is
+   * what the design puts across the bottom of the home page.
+   */
   columns: number;
   /** Columns on the notes wall. */
   noteColumns: number;
@@ -52,7 +55,7 @@ export function resolveLayout(width: number, height: number): Layout {
     bp,
     compact,
     landscape: width > height,
-    columns: compact ? 1 : width < 900 ? 2 : width < 1300 ? 3 : 4,
+    columns: compact ? 1 : width < 900 ? 2 : 3,
     noteColumns: compact ? 1 : bp === 'medium' ? 2 : width < 1300 ? 3 : 4,
     gutter: compact ? 16 : wide ? 26 : 22,
     gap: compact ? 12 : wide ? 18 : 16,
