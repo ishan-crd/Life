@@ -14,7 +14,7 @@ const MISSED_LINE =
   'M0 148 C 20 146, 30 132, 48 126 C 66 120, 76 142, 96 144 C 116 146, 124 112, 146 110 C 168 108, 176 140, 196 146 C 214 150, 226 140, 246 138 C 266 136, 280 146, 300 144 C 322 142, 340 134, 380 130';
 
 /** The kept-vs-missed area chart, including the 1.6s `drawLine` reveal. */
-export function ConsistencyChart({ theme, height = 176 }: { theme: Theme; height?: number }) {
+export function ConsistencyChart({ theme, height = 176 }: { theme: Theme; height?: number | string }) {
   const dash = useSharedValue(900);
 
   useEffect(() => {

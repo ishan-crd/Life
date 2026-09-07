@@ -29,10 +29,12 @@ export function GrowBarX({
   delay = 0,
   duration = DURATION.bar,
   style,
+  children,
 }: {
   delay?: number;
   duration?: number;
   style?: StyleProp<ViewStyle>;
+  children?: React.ReactNode;
 }) {
   const progress = useSharedValue(0.06);
 
@@ -42,7 +44,7 @@ export function GrowBarX({
 
   const animated = useAnimatedStyle(() => ({ transform: [{ scaleX: progress.value }] }));
 
-  return <Animated.View style={[{ transformOrigin: 'left' }, style, animated]} />;
+  return <Animated.View style={[{ transformOrigin: 'left' }, style, animated]}>{children}</Animated.View>;
 }
 
 /** `@keyframes fadeCell` — heatmap cells popping in. */
