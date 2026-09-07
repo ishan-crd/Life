@@ -9,7 +9,17 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Icon, type IconName } from './Icon';
 import { Touchable, type TouchableProps } from './Touchable';
-import { CURVE, DURATION, radius, size as metric, space, useTheme, type as typeScale } from '@/theme';
+import {
+  CURVE,
+  DURATION,
+  radius,
+  scaleType,
+  size as metric,
+  space,
+  useLayout,
+  useTheme,
+  type as typeScale,
+} from '@/theme';
 
 export const FONT = {
   regular: 'PlusJakartaSans_400Regular',
@@ -43,16 +53,20 @@ export function Txt({
   numberOfLines,
 }: TxtProps) {
   const t = useTheme();
+  const { fontScale } = useLayout();
+  // Sizes are written at the design's iPad scale and shrink from there, so a
+  // screen never has to restate its type — tracking and leading follow.
+  const px = scaleType(size, fontScale);
   return (
     <Text
       numberOfLines={numberOfLines}
       style={[
         {
           fontFamily: FONT[weight],
-          fontSize: size,
+          fontSize: px,
           color: color ?? t.ink,
-          ...(tracking != null ? { letterSpacing: tracking * size } : null),
-          ...(lineHeight != null ? { lineHeight: lineHeight * size } : null),
+          ...(tracking != null ? { letterSpacing: tracking * px } : null),
+          ...(lineHeight != null ? { lineHeight: lineHeight * px } : null),
         },
         style,
       ]}
@@ -65,18 +79,19 @@ export function Txt({
 export function Card({
   children,
   style,
-  padding = space.cardPadWide,
+  padding,
 }: {
   children?: React.ReactNode;
   style?: StyleProp<ViewStyle>;
   padding?: number;
 }) {
   const t = useTheme();
+  const { cardPad } = useLayout();
   return (
     <View
       style={[
         {
-          padding,
+          padding: padding ?? cardPad,
           borderRadius: radius.card,
           backgroundColor: t.card,
           borderWidth: 1,

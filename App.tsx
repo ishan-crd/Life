@@ -1,13 +1,12 @@
 import React, { useCallback, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { Platform, View, useWindowDimensions } from 'react-native';
-import * as ScreenOrientation from 'expo-screen-orientation';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SheetHost } from 'insyd-bottom-sheet';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFonts } from 'expo-font';
-import { ThemeProvider, useTheme } from '@/theme';
+import { LayoutProvider, ThemeProvider, useLayout, useTheme } from '@/theme';
 // Subpath imports keep only the four weights we use in the bundle.
 import PlusJakartaSans_400Regular from '@expo-google-fonts/plus-jakarta-sans/400Regular/PlusJakartaSans_400Regular.ttf';
 import PlusJakartaSans_500Medium from '@expo-google-fonts/plus-jakarta-sans/500Medium/PlusJakartaSans_500Medium.ttf';
@@ -28,16 +27,6 @@ import { useProfileStore } from '@/state/profile';
 import { PAGE_TITLES, useAppStore } from '@/state/store';
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
-
-/** The dashboard is designed for a landscape iPad canvas. */
-function useLandscapeLock() {
-  useEffect(() => {
-    ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE).catch(() => undefined);
-    return () => {
-      ScreenOrientation.unlockAsync().catch(() => undefined);
-    };
-  }, []);
-}
 
 /** On web, `#board`, `#calendar`, … deep-link straight to a page. */
 function useHashRoute() {
@@ -66,12 +55,16 @@ function useFocusTicker() {
   }, [running, tick]);
 }
 
-/** The rounded 22px canvas every screen lives inside. */
+/**
+ * The canvas every screen lives inside: a rounded, inset card on a tablet, and
+ * edge-to-edge on a phone where 12px of backdrop is 12px wasted.
+ */
 function Shell({ children }: { children: (shellWidth: number) => React.ReactNode }) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
-  const shellWidth = Math.max(320, width - insets.left - insets.right - 24);
+  const { shellInset, shellRadius } = useLayout();
+  const shellWidth = Math.max(280, width - insets.left - insets.right - shellInset * 2);
 
   return (
     <View
@@ -89,8 +82,8 @@ function Shell({ children }: { children: (shellWidth: number) => React.ReactNode
         style={{
           flex: 1,
           width: shellWidth,
-          marginVertical: 12,
-          borderRadius: 22,
+          marginVertical: shellInset,
+          borderRadius: shellRadius,
           overflow: 'hidden',
           backgroundColor: t.bg,
         }}
@@ -170,7 +163,6 @@ function Dashboard() {
 
 function Root() {
   const t = useTheme();
-  useLandscapeLock();
   const hydrated = useAppStore((s) => s.hydrated);
   const profileHydrated = useProfileStore((s) => s.hydrated);
   const profile = useProfileStore((s) => s.profile);
@@ -208,17 +200,19 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <ThemeProvider>
-          {/*
-           * SheetHost is the in-app portal every SmoothSheet renders into. It
-           * sits below ThemeProvider so sheet content resolves the palette, and
-           * inside GestureHandlerRootView so drag-to-dismiss works.
-           */}
-          <SheetHost>
-            <StatusBar style={light ? 'dark' : 'light'} />
-            <Root />
-          </SheetHost>
-        </ThemeProvider>
+        <LayoutProvider>
+          <ThemeProvider>
+            {/*
+             * SheetHost is the in-app portal every SmoothSheet renders into. It
+             * sits below ThemeProvider so sheet content resolves the palette, and
+             * inside GestureHandlerRootView so drag-to-dismiss works.
+             */}
+            <SheetHost>
+              <StatusBar style={light ? 'dark' : 'light'} />
+              <Root />
+            </SheetHost>
+          </ThemeProvider>
+        </LayoutProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
