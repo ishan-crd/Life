@@ -1,4 +1,4 @@
-# Life — the Loud dashboard
+# Life
 
 An iPad-first life dashboard built with Expo (SDK 57) and React Native, replicated end to
 end from the `Life Dashboard Dark.dc.html` Claude Design file: five full-bleed pages you

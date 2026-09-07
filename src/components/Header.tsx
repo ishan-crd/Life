@@ -49,7 +49,7 @@ export const Header = React.memo(function Header({
           <ConicDisc size={38} from={200} stops={BRAND_STOPS} />
         </View>
         <Txt size={typeScale.brand} weight="semibold" tracking={tracking.heading}>
-          Loud
+          Life
         </Txt>
       </View>
 

@@ -143,7 +143,7 @@ export function AuthScreen() {
               <ConicDisc size={42} from={200} stops={BRAND_STOPS} />
             </View>
             <Txt size={26} weight="semibold" tracking={-0.02}>
-              Loud
+              Life
             </Txt>
           </View>
         </Animated.View>
