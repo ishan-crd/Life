@@ -1,5 +1,8 @@
 # Life
 
+**App Store listing name: _Life: Daily Planner & Habits_** (28 of the 30 characters Apple
+allows). `expo.name` stays `Life` so the home-screen label under the icon is not truncated.
+
 A life dashboard built with Expo (SDK 57) and React Native, replicated end to end from the
 `Life Dashboard Dark.dc.html` Claude Design file: five full-bleed pages you swipe between,
 dark and light themes, and local-first data for everything you track.
