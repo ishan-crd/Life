@@ -7,13 +7,7 @@
     "icon": "./assets/icon.png",
     "scheme": "life",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "backgroundColor": "#050506",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#050506"
-    },
     "assetBundlePatterns": ["**/*"],
     "ios": {
       "supportsTablet": true,
