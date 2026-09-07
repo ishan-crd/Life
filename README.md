@@ -67,6 +67,13 @@ pill and note rows are memoised so toggling one does not re-render its siblings;
 note editor is uncontrolled, so typing a long note costs no re-renders and no per-keystroke
 write to AsyncStorage.
 
+**Sheets.** Every create/edit affordance — tasks, cards, events, habits, pills, notes,
+account — routes through one `SheetProvider` in `src/components/Sheet.tsx`. It is presented
+with [`insyd-bottom-sheet`](https://www.npmjs.com/package/insyd-bottom-sheet)'s
+`SmoothSheet`, which brings the drag handle, drag-to-dismiss, backdrop tap and keyboard
+avoidance. `<SheetHost>` is mounted in `App.tsx` below `ThemeProvider` so portaled sheet
+content still resolves the palette.
+
 **Data.** There is no backend. Two zustand stores persist to `AsyncStorage`: one for the
 dashboard, one for the account and onboarding answers. Sign in with Apple uses
 `expo-apple-authentication` when the device supports it; email accounts are local.

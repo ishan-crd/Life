@@ -4,6 +4,7 @@ import { Platform, View, useWindowDimensions } from 'react-native';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SheetHost } from 'insyd-bottom-sheet';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFonts } from 'expo-font';
 import { ThemeProvider, useTheme } from '@/theme';
@@ -208,8 +209,15 @@ export default function App() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
         <ThemeProvider>
-          <StatusBar style={light ? 'dark' : 'light'} />
-          <Root />
+          {/*
+           * SheetHost is the in-app portal every SmoothSheet renders into. It
+           * sits below ThemeProvider so sheet content resolves the palette, and
+           * inside GestureHandlerRootView so drag-to-dismiss works.
+           */}
+          <SheetHost>
+            <StatusBar style={light ? 'dark' : 'light'} />
+            <Root />
+          </SheetHost>
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
