@@ -2,7 +2,7 @@ import React, { useCallback } from 'react';
 import { Pressable, type PressableProps, type StyleProp, type ViewStyle } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
-import { CURVE, DURATION } from '@/theme/motion';
+import { CURVE, DURATION } from '@/theme';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 

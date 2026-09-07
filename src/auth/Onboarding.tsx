@@ -17,11 +17,9 @@ import { Touchable } from '@/components/Touchable';
 import { FONT, Txt } from '@/components/ui';
 import { useAppStore } from '@/state/store';
 import { useProfileStore, type OnboardingAnswers } from '@/state/profile';
-import { CURVE, DURATION, POP_SPRING } from '@/theme/motion';
-import { accent } from '@/theme/tokens';
-import { useTheme } from '@/theme/useTheme';
 import { Aurora } from './Aurora';
 import { GoalIcon, type GoalKey } from './GoalIcon';
+import { accent, CURVE, DURATION, POP_SPRING, radius, size as metric, space, tracking, useTheme, type as typeScale } from '@/theme';
 
 const GOALS: { key: GoalKey; label: string; blurb: string; color: string }[] = [
   { key: 'focus', label: 'Deep work', blurb: 'Longer, quieter blocks', color: accent.violetSoft },
@@ -75,19 +73,10 @@ export function Onboarding() {
   const [stepGoal, setStepGoal] = useState(10000);
   const [wakeTime, setWakeTime] = useState('07:00');
 
-  const suggestedRituals = useMemo(() => {
-    const fromGoals = goals.flatMap((g) => RITUALS_BY_GOAL[g]);
-    return Array.from(new Set([...fromGoals, ...BASE_RITUALS]));
-  }, [goals]);
-
-  useEffect(() => {
-    // Pre-select the rituals implied by the goals the moment they change.
-    setRituals((current) => {
-      const suggested = goals.flatMap((g) => RITUALS_BY_GOAL[g]);
-      const kept = current.filter((r) => suggested.includes(r) || BASE_RITUALS.includes(r));
-      return Array.from(new Set([...suggested.slice(0, 5), ...kept]));
-    });
-  }, [goals]);
+  const suggestedRituals = useMemo(
+    () => Array.from(new Set([...goals.flatMap((g) => RITUALS_BY_GOAL[g]), ...BASE_RITUALS])),
+    [goals]
+  );
 
   const canAdvance = useMemo(() => {
     if (step === 0) return name.trim().length >= 2;
@@ -123,8 +112,23 @@ export function Onboarding() {
     [progress]
   );
 
+  /**
+   * Toggling a goal also pre-selects the rituals it implies, so step 4 opens
+   * with a sensible checklist instead of an empty one.
+   */
   const toggleGoal = useCallback((key: GoalKey) => {
-    setGoals((g) => (g.includes(key) ? g.filter((x) => x !== key) : [...g, key]));
+    setGoals((current) => {
+      const nextGoals = current.includes(key)
+        ? current.filter((x) => x !== key)
+        : [...current, key];
+      const suggested = nextGoals.flatMap((g) => RITUALS_BY_GOAL[g]).slice(0, 5);
+      setRituals((chosen) =>
+        Array.from(
+          new Set([...suggested, ...chosen.filter((r) => BASE_RITUALS.includes(r))])
+        )
+      );
+      return nextGoals;
+    });
   }, []);
 
   const toggleRitual = useCallback((label: string) => {
@@ -147,7 +151,7 @@ export function Onboarding() {
             style={{
               width: 40,
               height: 40,
-              borderRadius: 20,
+              borderRadius: radius.pill,
               borderWidth: 1,
               borderColor: t.btnLine,
               alignItems: 'center',
@@ -157,9 +161,20 @@ export function Onboarding() {
           >
             <Icon name="chevronLeft" size={16} color={t.inkSoft} />
           </Touchable>
-          <View style={{ flex: 1, height: 6, borderRadius: 999, backgroundColor: t.surface3, overflow: 'hidden' }}>
+          <View
+            style={{
+              flex: 1,
+              height: 6,
+              borderRadius: radius.pill,
+              backgroundColor: t.surface3,
+              overflow: 'hidden',
+            }}
+          >
             <Animated.View
-              style={[{ height: '100%', borderRadius: 999, backgroundColor: accent.purple }, progressStyle]}
+              style={[
+                { height: '100%', borderRadius: radius.pill, backgroundColor: accent.purple },
+                progressStyle,
+              ]}
             />
           </View>
           <Txt size={13} color={t.muted2}>
@@ -346,9 +361,9 @@ export function Onboarding() {
             flexDirection: 'row',
             alignItems: 'center',
             gap: 10,
-            height: 54,
-            paddingHorizontal: 26,
-            borderRadius: 999,
+            height: metric.formButton,
+            paddingHorizontal: space.gutter,
+            borderRadius: radius.pill,
             backgroundColor: t.invBg,
             opacity: canAdvance ? 1 : 0.35,
           }}
@@ -375,10 +390,10 @@ function Step({
   const t = useTheme();
   return (
     <Animated.View entering={FadeInDown.duration(420)} exiting={FadeOutUp.duration(180)}>
-      <Txt size={40} weight="medium" tracking={-0.035} lineHeight={1.1}>
+      <Txt size={typeScale.heading} weight="medium" tracking={tracking.display} lineHeight={1.1}>
         {title}
       </Txt>
-      <Txt size={16} color={t.muted} style={{ marginTop: 10, marginBottom: 26 }}>
+      <Txt size={typeScale.lead} color={t.muted} style={{ marginTop: 10, marginBottom: 26 }}>
         {subtitle}
       </Txt>
       {children}
@@ -422,7 +437,7 @@ function GoalCard({
           style={[
             {
               width: 232,
-              padding: 18,
+              padding: space.cardPad,
               borderRadius: 20,
               borderWidth: 1.5,
             },
@@ -504,7 +519,7 @@ function ChoiceCard({
         <View
           style={{
             width: 208,
-            padding: 20,
+            padding: space.cardPadWide,
             borderRadius: 20,
             borderWidth: 1.5,
             borderColor: selected ? accent.purple : t.line,
@@ -548,7 +563,7 @@ function RitualChip({
             gap: 10,
             paddingHorizontal: 16,
             paddingVertical: 13,
-            borderRadius: 999,
+            borderRadius: radius.pill,
             borderWidth: 1.5,
             borderColor: selected ? accent.purple : t.line,
             backgroundColor: selected ? t.surface2 : t.card,
@@ -583,9 +598,9 @@ function Pillet({
           style={{
             minWidth: 84,
             alignItems: 'center',
-            paddingHorizontal: 20,
+            paddingHorizontal: space.cardPadWide,
             paddingVertical: 14,
-            borderRadius: 999,
+            borderRadius: radius.pill,
             borderWidth: 1.5,
             borderColor: selected ? accent.purple : t.line,
             backgroundColor: selected ? t.surface2 : t.card,
@@ -606,7 +621,7 @@ function SummaryCard({ title, value, detail }: { title: string; value: string; d
     <View
       style={{
         width: 268,
-        padding: 20,
+        padding: space.cardPadWide,
         borderRadius: 20,
         backgroundColor: t.card,
         borderWidth: 1,

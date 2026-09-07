@@ -7,10 +7,9 @@ import { ConicDisc } from '@/components/ConicDisc';
 import { Touchable } from '@/components/Touchable';
 import { FONT, Txt } from '@/components/ui';
 import { useProfileStore } from '@/state/profile';
-import { accent } from '@/theme/tokens';
-import { useTheme } from '@/theme/useTheme';
 import { AppleButton } from './AppleButton';
 import { Aurora } from './Aurora';
+import { accent, radius, size as metric, space, tracking, useTheme, type as typeScale } from '@/theme';
 
 const BRAND_STOPS = [
   { color: '#c4b5fd', to: 150 },
@@ -150,15 +149,26 @@ export function AuthScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeInUp.delay(120).duration(600)} style={{ marginTop: 34 }}>
-          <Txt size={compact ? 38 : 50} weight="medium" tracking={-0.035} lineHeight={1.08}>
+          <Txt
+            size={compact ? 38 : 50}
+            weight="medium"
+            tracking={tracking.display}
+            lineHeight={1.08}
+          >
             Your whole life,
           </Txt>
-          <Txt size={compact ? 38 : 50} weight="medium" tracking={-0.035} lineHeight={1.08} color={t.inkDim}>
+          <Txt
+            size={compact ? 38 : 50}
+            weight="medium"
+            tracking={tracking.display}
+            lineHeight={1.08}
+            color={t.inkDim}
+          >
             one swipe wide.
           </Txt>
         </Animated.View>
 
-        <View style={{ marginTop: 36, gap: 18, maxWidth: 460 }}>
+        <View style={{ marginTop: 36, gap: space.gap, maxWidth: 460 }}>
           {HIGHLIGHTS.map((h, i) => (
             <Animated.View
               key={h.title}
@@ -193,10 +203,10 @@ export function AuthScreen() {
           backgroundColor: t.card,
         }}
       >
-        <Txt size={30} weight="semibold" tracking={-0.03}>
+        <Txt size={30} weight="semibold" tracking={tracking.title}>
           {mode === 'signin' ? 'Welcome back' : 'Make it yours'}
         </Txt>
-        <Txt size={14} color={t.muted} style={{ marginTop: 8 }} lineHeight={1.45}>
+        <Txt size={typeScale.body} color={t.muted} style={{ marginTop: 8 }} lineHeight={1.45}>
           {mode === 'signin'
             ? 'Sign in to pick up exactly where you left off.'
             : 'Two minutes of setup and the dashboard is tuned to you.'}
@@ -251,9 +261,9 @@ export function AuthScreen() {
           activeScale={0.97}
           haptic="light"
           style={{
-            height: 54,
+            height: metric.formButton,
             marginTop: 20,
-            borderRadius: 999,
+            borderRadius: radius.pill,
             backgroundColor: t.invBg,
             alignItems: 'center',
             justifyContent: 'center',
@@ -312,7 +322,7 @@ function Field({
   const [focused, setFocused] = useState(false);
   return (
     <View style={{ marginBottom: 14 }}>
-      <Txt size={12} color={t.muted2} style={{ marginBottom: 7 }}>
+      <Txt size={typeScale.meta} color={t.muted2} style={{ marginBottom: 7 }}>
         {label}
       </Txt>
       <TextInput
@@ -327,8 +337,8 @@ function Field({
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
         style={{
-          height: 50,
-          borderRadius: 14,
+          height: metric.input,
+          borderRadius: radius.cell,
           paddingHorizontal: 16,
           fontFamily: FONT.medium,
           fontSize: 15,

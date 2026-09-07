@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import type { StyleProp, ViewStyle } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
-import { CURVE, DURATION } from '@/theme/motion';
+import { CURVE, DURATION } from '@/theme';
 
 /** `@keyframes growBarY` — a bar that scales up from its baseline on mount. */
 export function GrowBar({

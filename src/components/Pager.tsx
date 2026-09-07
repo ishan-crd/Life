@@ -9,8 +9,8 @@ import Animated, {
   withTiming,
   type SharedValue,
 } from 'react-native-reanimated';
-import { CURVE, DURATION } from '@/theme/motion';
 import { PAGE_COUNT, useAppStore } from '@/state/store';
+import { CURVE, DURATION } from '@/theme';
 
 /** Distance the design requires before a swipe commits to the next page. */
 const SNAP_THRESHOLD = 90;
@@ -45,7 +45,6 @@ export function Pager({
   const setPage = useAppStore((s) => s.setPage);
 
   const translateX = useSharedValue(-page * width);
-  const startX = useSharedValue(0);
   const pageSV = useSharedValue(page);
 
   useEffect(() => {
@@ -61,9 +60,6 @@ export function Pager({
       Gesture.Pan()
         .activeOffsetX([-14, 14])
         .failOffsetY([-18, 18])
-        .onBegin(() => {
-          startX.value = translateX.value;
-        })
         .onUpdate((e) => {
           const p = pageSV.value;
           let dx = e.translationX;
@@ -84,7 +80,7 @@ export function Pager({
           });
           if (next !== p) runOnJS(setPage)(next);
         }),
-    [width, setPage, pageSV, startX, translateX]
+    [width, setPage, pageSV, translateX]
   );
 
   const position = useDerivedValue(() => -translateX.value / width, [width]);

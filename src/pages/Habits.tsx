@@ -12,9 +12,7 @@ import { isoDay } from '@/lib/date';
 import { useNow } from '@/lib/useNow';
 import { useAppStore } from '@/state/store';
 import type { Habit, Med } from '@/state/types';
-import { CURVE, DURATION } from '@/theme/motion';
-import { accent } from '@/theme/tokens';
-import { useTheme } from '@/theme/useTheme';
+import { accent, CURVE, DURATION, radius, space, useTheme } from '@/theme';
 
 const DAY_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
@@ -97,7 +95,7 @@ export function Habits() {
   );
 
   return (
-    <View style={{ flex: 1, paddingHorizontal: 26 }}>
+    <View style={{ flex: 1, paddingHorizontal: space.gutter }}>
       <PageHeader
         title="Health"
         accent="& habits"
@@ -123,7 +121,7 @@ export function Habits() {
         style={{
           flex: 1,
           flexDirection: 'row',
-          gap: 18,
+          gap: space.gap,
           paddingBottom: 30,
           borderTopWidth: 1,
           borderTopColor: t.lineSoft,
@@ -134,8 +132,8 @@ export function Habits() {
           style={{
             flex: 1,
             minWidth: 0,
-            padding: 18,
-            borderRadius: 22,
+            padding: space.cardPad,
+            borderRadius: radius.card,
             backgroundColor: t.card,
             borderWidth: 1,
             borderColor: t.line,
@@ -172,56 +170,13 @@ export function Habits() {
           </View>
           <ScrollView style={{ flex: 1, marginHorizontal: -8 }} showsVerticalScrollIndicator={false}>
             {habits.map((hb) => (
-              <View
+              <HabitRow
                 key={hb.id}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 14,
-                  paddingVertical: 12,
-                  paddingHorizontal: 8,
-                  borderRadius: 14,
-                }}
-              >
-                <Touchable
-                  onPress={() => openHabitSheet(hb)}
-                  activeScale={0.92}
-                  accessibilityLabel={`Edit ${hb.name}`}
-                  style={{
-                    width: 34,
-                    height: 34,
-                    borderRadius: 11,
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    backgroundColor: hb.tint,
-                  }}
-                >
-                  <Txt size={15}>{hb.glyph}</Txt>
-                </Touchable>
-                <Touchable
-                  onPress={() => openHabitSheet(hb)}
-                  activeScale={0.995}
-                  haptic={false}
-                  style={{ flex: 1, minWidth: 0 }}
-                >
-                  <Txt size={14} weight="semibold" tracking={-0.01} numberOfLines={1}>
-                    {hb.name}
-                  </Txt>
-                  <Txt size={12} color={t.muted2} style={{ marginTop: 2 }} numberOfLines={1}>
-                    {hb.meta}
-                  </Txt>
-                </Touchable>
-                <View style={{ flexDirection: 'row', gap: 8 }}>
-                  {hb.days.map((v, i) => (
-                    <DayDot
-                      key={i}
-                      on={!!v}
-                      isToday={i === today}
-                      onPress={() => toggleHabitDay(hb.id, i)}
-                    />
-                  ))}
-                </View>
-              </View>
+                habit={hb}
+                today={today}
+                onToggleDay={toggleHabitDay}
+                onEdit={openHabitSheet}
+              />
             ))}
           </ScrollView>
         </View>
@@ -229,8 +184,8 @@ export function Habits() {
         <View
           style={{
             width: 372,
-            padding: 18,
-            borderRadius: 22,
+            padding: space.cardPad,
+            borderRadius: radius.card,
             backgroundColor: t.card,
             borderWidth: 1,
             borderColor: t.line,
@@ -256,64 +211,14 @@ export function Habits() {
           </View>
           <ScrollView style={{ flex: 1 }} contentContainerStyle={{ gap: 9 }} showsVerticalScrollIndicator={false}>
             {meds.map((m) => (
-              <Touchable
-                key={m.id}
-                onPress={() => toggleMed(m.id)}
-                onLongPress={() => openMedSheet(m)}
-                activeScale={0.99}
-                style={{
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 13,
-                  paddingVertical: 13,
-                  paddingHorizontal: 14,
-                  borderRadius: 16,
-                  backgroundColor: m.taken ? t.medTakenBg : t.medIdleBg,
-                  borderWidth: 1,
-                  borderColor: m.taken ? t.medTakenBorder : t.medIdleBorder,
-                }}
-              >
-                <RoundTick checked={m.taken} />
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <Txt
-                    size={14}
-                    weight="semibold"
-                    tracking={-0.01}
-                    color={m.taken && t.name === 'light' ? '#4d4f57' : t.ink}
-                    style={[
-                      m.taken ? { textDecorationLine: 'line-through' } : null,
-                      m.taken && t.name === 'dark' ? { opacity: 0.55 } : null,
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {m.name}
-                  </Txt>
-                  <Txt size={12} color={t.muted2} style={{ marginTop: 2 }} numberOfLines={1}>
-                    {m.dose}
-                  </Txt>
-                </View>
-                <View
-                  style={{
-                    paddingHorizontal: 10,
-                    paddingVertical: 5,
-                    borderRadius: 999,
-                    backgroundColor: t.pill,
-                    borderWidth: 1,
-                    borderColor: t.pillLine,
-                  }}
-                >
-                  <Txt size={12} weight="semibold" color={t.inkSoft}>
-                    {m.when}
-                  </Txt>
-                </View>
-              </Touchable>
+              <MedRow key={m.id} med={m} onToggle={toggleMed} onEdit={openMedSheet} />
             ))}
             <Touchable
               onPress={() => openMedSheet()}
               activeScale={0.98}
               style={{
                 padding: 12,
-                borderRadius: 14,
+                borderRadius: radius.cell,
                 borderWidth: 1,
                 borderStyle: 'dashed',
                 borderColor: t.btnLineDash,
@@ -327,11 +232,11 @@ export function Habits() {
           </ScrollView>
         </View>
 
-        <View style={{ width: 274, gap: 18 }}>
+        <View style={{ width: 274, gap: space.gap }}>
           <View
             style={{
-              padding: 18,
-              borderRadius: 22,
+              padding: space.cardPad,
+              borderRadius: radius.card,
               backgroundColor: t.card,
               borderWidth: 1,
               borderColor: t.line,
@@ -361,8 +266,8 @@ export function Habits() {
 
           <View
             style={{
-              padding: 18,
-              borderRadius: 22,
+              padding: space.cardPad,
+              borderRadius: radius.card,
               backgroundColor: t.card,
               borderWidth: 1,
               borderColor: t.line,
@@ -395,8 +300,8 @@ export function Habits() {
           <View
             style={{
               flex: 1,
-              padding: 18,
-              borderRadius: 22,
+              padding: space.cardPad,
+              borderRadius: radius.card,
               backgroundColor: t.card,
               borderWidth: 1,
               borderColor: t.line,
@@ -438,7 +343,7 @@ function DayDot({ on, isToday, onPress }: { on: boolean; isToday: boolean; onPre
           {
             width: 26,
             height: 26,
-            borderRadius: 9,
+            borderRadius: radius.chip,
             borderWidth: 1,
           },
           isToday ? { borderStyle: 'solid' } : null,
@@ -469,7 +374,7 @@ function RoundTick({ checked }: { checked: boolean }) {
   return (
     <Animated.View
       style={[
-        { width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+        { width: 22, height: 22, borderRadius: radius.glyph, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
         style,
       ]}
     >
@@ -493,3 +398,133 @@ function Glass({ filled }: { filled: boolean }) {
   );
   return <Animated.View style={[{ flex: 1, height: 26, borderRadius: 7 }, style]} />;
 }
+
+/**
+ * One habit and its week of dots. Memoised so logging a single dot re-renders
+ * that row alone rather than all six rows and their 42 animated cells.
+ */
+const HabitRow = React.memo(function HabitRow({
+  habit,
+  today,
+  onToggleDay,
+  onEdit,
+}: {
+  habit: Habit;
+  today: number;
+  onToggleDay(id: string, dayIndex: number): void;
+  onEdit(habit: Habit): void;
+}) {
+  const t = useTheme();
+  const edit = useCallback(() => onEdit(habit), [onEdit, habit]);
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 14,
+        paddingVertical: 12,
+        paddingHorizontal: 8,
+        borderRadius: radius.cell,
+      }}
+    >
+      <Touchable
+        onPress={edit}
+        activeScale={0.92}
+        accessibilityLabel={`Edit ${habit.name}`}
+        style={{
+          width: 34,
+          height: 34,
+          borderRadius: radius.glyph,
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: habit.tint,
+        }}
+      >
+        <Txt size={15}>{habit.glyph}</Txt>
+      </Touchable>
+      <Touchable onPress={edit} activeScale={0.995} haptic={false} style={{ flex: 1, minWidth: 0 }}>
+        <Txt size={14} weight="semibold" tracking={-0.01} numberOfLines={1}>
+          {habit.name}
+        </Txt>
+        <Txt size={12} color={t.muted2} style={{ marginTop: 2 }} numberOfLines={1}>
+          {habit.meta}
+        </Txt>
+      </Touchable>
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        {habit.days.map((v, i) => (
+          <DayDot
+            key={i}
+            on={!!v}
+            isToday={i === today}
+            onPress={() => onToggleDay(habit.id, i)}
+          />
+        ))}
+      </View>
+    </View>
+  );
+});
+
+/** One pill row — memoised for the same reason as `HabitRow`. */
+const MedRow = React.memo(function MedRow({
+  med,
+  onToggle,
+  onEdit,
+}: {
+  med: Med;
+  onToggle(id: string): void;
+  onEdit(med: Med): void;
+}) {
+  const t = useTheme();
+  return (
+    <Touchable
+      onPress={() => onToggle(med.id)}
+      onLongPress={() => onEdit(med)}
+      activeScale={0.99}
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 13,
+        paddingVertical: 13,
+        paddingHorizontal: 14,
+        borderRadius: radius.tile,
+        backgroundColor: med.taken ? t.medTakenBg : t.medIdleBg,
+        borderWidth: 1,
+        borderColor: med.taken ? t.medTakenBorder : t.medIdleBorder,
+      }}
+    >
+      <RoundTick checked={med.taken} />
+      <View style={{ flex: 1, minWidth: 0 }}>
+        <Txt
+          size={14}
+          weight="semibold"
+          tracking={-0.01}
+          color={med.taken && t.name === 'light' ? '#4d4f57' : t.ink}
+          style={[
+            med.taken ? { textDecorationLine: 'line-through' } : null,
+            med.taken && t.name === 'dark' ? { opacity: 0.55 } : null,
+          ]}
+          numberOfLines={1}
+        >
+          {med.name}
+        </Txt>
+        <Txt size={12} color={t.muted2} style={{ marginTop: 2 }} numberOfLines={1}>
+          {med.dose}
+        </Txt>
+      </View>
+      <View
+        style={{
+          paddingHorizontal: 10,
+          paddingVertical: 5,
+          borderRadius: radius.pill,
+          backgroundColor: t.pill,
+          borderWidth: 1,
+          borderColor: t.pillLine,
+        }}
+      >
+        <Txt size={12} weight="semibold" color={t.inkSoft}>
+          {med.when}
+        </Txt>
+      </View>
+    </Touchable>
+  );
+});

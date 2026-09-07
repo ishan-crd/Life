@@ -9,11 +9,10 @@ import { useSheet } from '@/components/Sheet';
 import { Touchable } from '@/components/Touchable';
 import { Card, GhostButton, Pill, RoundButton, Txt } from '@/components/ui';
 import { addDays, fmtShortDate, greetingFor, mmss, startOfWeek, to12h } from '@/lib/date';
+import { useNow } from '@/lib/useNow';
 import { firstName, useProfileStore } from '@/state/profile';
 import { useAppStore } from '@/state/store';
-import { accent } from '@/theme/tokens';
-import { useTheme } from '@/theme/useTheme';
-import { useNow } from '@/lib/useNow';
+import { accent, radius, space, useTheme } from '@/theme';
 
 const RANGES = ['Day', 'Week', 'Month'] as const;
 
@@ -47,10 +46,7 @@ export function Overview() {
   const range = useAppStore((s) => s.range);
   const setRange = useAppStore((s) => s.setRange);
   const setPage = useAppStore((s) => s.setPage);
-  const focusLeft = useAppStore((s) => s.focusLeft);
-  const focusRunning = useAppStore((s) => s.focusRunning);
   const focusBanked = useAppStore((s) => s.focusBankedSeconds);
-  const toggleTimer = useAppStore((s) => s.toggleTimer);
   const resetTimer = useAppStore((s) => s.resetTimer);
   const setFocusTotal = useAppStore((s) => s.setFocusTotal);
   const streak = useAppStore((s) => s.streak);
@@ -99,6 +95,8 @@ export function Overview() {
   const agenda = useMemo(() => (events[todayKey] ?? []).slice(0, 5), [events, todayKey]);
 
   const focusLogged = (2.4 + focusBanked / 3600).toFixed(1);
+
+  const goToBoard = useCallback(() => setPage(1), [setPage]);
 
   const openTimerOptions = useCallback(() => {
     openSheet({
@@ -151,7 +149,7 @@ export function Overview() {
   }, [openSheet, addEvent, todayKey]);
 
   return (
-    <View style={{ flex: 1, paddingHorizontal: 26 }}>
+    <View style={{ flex: 1, paddingHorizontal: space.gutter }}>
       <RiseIn
         delay={50}
         style={{
@@ -173,7 +171,7 @@ export function Overview() {
             flexDirection: 'row',
             gap: 3,
             padding: 5,
-            borderRadius: 999,
+            borderRadius: radius.pill,
             backgroundColor: t.chip,
             borderWidth: 1,
             borderColor: t.lineSoft,
@@ -186,9 +184,9 @@ export function Overview() {
                 key={label}
                 onPress={() => setRange(i)}
                 style={{
-                  paddingHorizontal: 26,
+                  paddingHorizontal: space.gutter,
                   paddingVertical: 11,
-                  borderRadius: 999,
+                  borderRadius: radius.pill,
                   backgroundColor: active ? t.rangeActiveBg : 'transparent',
                 }}
               >
@@ -228,11 +226,8 @@ export function Overview() {
             </Txt>
           </Txt>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 18 }}>
-            <GhostButton label="Board" icon="arrowRight" onPress={() => setPage(1)} />
-            <GhostButton
-              label={`${focusRunning ? 'Pause' : 'Focus'} · ${mmss(focusLeft)}`}
-              onPress={toggleTimer}
-            />
+            <GhostButton label="Board" icon="arrowRight" onPress={goToBoard} />
+            <FocusButton />
             <RoundButton
               icon="dots"
               size={46}
@@ -283,7 +278,7 @@ export function Overview() {
                 <GrowBarX
                   delay={200}
                   duration={800}
-                  style={{ height: 46, borderRadius: 9, overflow: 'hidden' }}
+                  style={{ height: 46, borderRadius: radius.chip, overflow: 'hidden' }}
                 >
                   <LinearGradient
                     colors={['#7c4dff', '#6d33f0']}
@@ -304,16 +299,7 @@ export function Overview() {
                   {' Deep work'}
                 </Txt>
               </Txt>
-              <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 6, height: 62 }}>
-                {workBars.map((b, i) => (
-                  <View key={i} style={{ flex: 1, height: `${b.h}%` }}>
-                    <GrowBar
-                      delay={b.delay}
-                      style={{ flex: 1, borderRadius: 5, backgroundColor: b.c }}
-                    />
-                  </View>
-                ))}
-              </View>
+              <BarGroup bars={workBars} height={62} />
             </View>
 
             <View style={{ flex: 0.38 }}>
@@ -325,16 +311,7 @@ export function Overview() {
                   {' Workouts'}
                 </Txt>
               </Txt>
-              <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 6, height: 56 }}>
-                {otherBars.map((b, i) => (
-                  <View key={i} style={{ flex: 1, height: `${b.h}%` }}>
-                    <GrowBar
-                      delay={b.delay}
-                      style={{ flex: 1, borderRadius: 5, backgroundColor: accent.violetInk }}
-                    />
-                  </View>
-                ))}
-              </View>
+              <BarGroup bars={otherBars} height={56} color={t.barMuted} />
             </View>
           </View>
 
@@ -349,12 +326,12 @@ export function Overview() {
         </View>
       </RiseIn>
 
-      <RiseIn delay={180} style={{ flex: 1, flexDirection: 'row', gap: 18, paddingBottom: 30 }}>
+      <RiseIn delay={180} style={{ flex: 1, flexDirection: 'row', gap: space.gap, paddingBottom: 30 }}>
         <Card style={{ flex: 1 }}>
           <CardHead icon="smile" title="Consistency" action="dots" onAction={() => {}} />
           <View style={{ flexDirection: 'row', gap: 20, marginTop: 16 }}>
             <Legend color={accent.limeChart} label="Kept" />
-            <Legend color="#4b4a53" label="Missed" muted />
+            <Legend color={t.legendMuted} label="Missed" muted />
           </View>
           <View style={{ marginTop: 10, height: 176 }}>
             <ConsistencyChart theme={t} height={176} />
@@ -397,7 +374,7 @@ export function Overview() {
                     style={{
                       flex: 1,
                       height: 32,
-                      borderRadius: 9,
+                      borderRadius: radius.chip,
                       backgroundColor: t.heat[v as 1 | 2 | 3 | 4 | 5],
                     }}
                   />
@@ -417,8 +394,8 @@ export function Overview() {
             <Txt size={12} color={t.muted2}>
               Less
             </Txt>
-            {['#2a2350', '#4b31a8', '#6d3bf5', '#a78bfa'].map((c) => (
-              <View key={c} style={{ width: 15, height: 15, borderRadius: 4, backgroundColor: c }} />
+            {t.heatLegend.map((c) => (
+              <View key={c} style={{ width: 15, height: 15, borderRadius: radius.swatch, backgroundColor: c }} />
             ))}
             <Txt size={12} color={t.muted2}>
               More
@@ -440,7 +417,7 @@ export function Overview() {
                   paddingVertical: 12,
                   paddingHorizontal: 8,
                   marginHorizontal: -8,
-                  borderRadius: 14,
+                  borderRadius: radius.cell,
                 }}
               >
                 <Txt size={14} weight="semibold" tracking={-0.01} numberOfLines={1} style={{ flex: 1 }}>
@@ -496,7 +473,7 @@ function ChartBadge({ color, label }: { color: string; label: string }) {
         gap: 9,
         paddingHorizontal: 12,
         paddingVertical: 8,
-        borderRadius: 9,
+        borderRadius: radius.chip,
         backgroundColor: t.pill,
         borderWidth: 1,
         borderColor: t.pillLine,
@@ -544,4 +521,46 @@ function DashedRule({ color, style }: { color: string; style?: object }) {
       ))}
     </View>
   );
+}
+
+interface Bar {
+  h: number;
+  c?: string;
+  delay: number;
+}
+
+/** A row of bottom-anchored bars that grow in on mount. */
+const BarGroup = React.memo(function BarGroup({
+  bars,
+  height,
+  color,
+}: {
+  bars: Bar[];
+  height: number;
+  /** Fallback fill for bar groups that share one colour. */
+  color?: string;
+}) {
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 6, height }}>
+      {bars.map((b, i) => (
+        <View key={i} style={{ flex: 1, height: `${b.h}%` }}>
+          <GrowBar
+            delay={b.delay}
+            style={{ flex: 1, borderRadius: 5, backgroundColor: b.c ?? color ?? accent.violetInk }}
+          />
+        </View>
+      ))}
+    </View>
+  );
+});
+
+/**
+ * The focus timer ticks every second. Keeping its subscription in a leaf means
+ * the rest of the overview — charts, heatmap, bars — never re-renders for it.
+ */
+function FocusButton() {
+  const left = useAppStore((s) => s.focusLeft);
+  const running = useAppStore((s) => s.focusRunning);
+  const toggleTimer = useAppStore((s) => s.toggleTimer);
+  return <GhostButton label={`${running ? 'Pause' : 'Focus'} · ${mmss(left)}`} onPress={toggleTimer} />;
 }

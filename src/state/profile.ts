@@ -56,7 +56,7 @@ export const useProfileStore = create<ProfileState>()(
       name: 'life-profile-v1',
       version: 1,
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: ({ hydrated, ...rest }) => rest,
+      partialize: ({ hydrated: _hydrated, ...rest }) => rest,
       onRehydrateStorage: () => () => {
         useProfileStore.setState({ hydrated: true });
       },

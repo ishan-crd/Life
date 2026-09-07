@@ -52,6 +52,16 @@ export interface Theme {
   cyan: string;
   /** Focus-heatmap ramp, keyed by intensity 1..5. */
   heat: Record<1 | 2 | 3 | 4 | 5, string>;
+  /**
+   * The four "less → more" legend swatches under the heatmap. The design
+   * hardcodes the dark ramp inline; the light values continue the light ramp so
+   * the legend stays readable when the theme flips.
+   */
+  heatLegend: readonly [string, string, string, string];
+  /** Low-emphasis bars (the "Workouts" group) — a muted tint of the accent. */
+  barMuted: string;
+  /** The neutral "Missed" swatch in the consistency legend. */
+  legendMuted: string;
   sleepIdle: string;
   glassEmpty: string;
   rangeActiveBg: string;
@@ -100,6 +110,9 @@ export const darkTheme: Theme = {
   invInk: '#0a0a0c',
   cyan: '#22d3ee',
   heat: { 1: '#241d47', 2: '#4b31a8', 3: '#8b6bf7', 4: '#e6dffb', 5: '#cbb9fb' },
+  heatLegend: ['#2a2350', '#4b31a8', '#6d3bf5', '#a78bfa'],
+  barMuted: '#3d2a76',
+  legendMuted: '#4b4a53',
   sleepIdle: '#2f2952',
   glassEmpty: '#232228',
   rangeActiveBg: '#2a2930',
@@ -148,6 +161,9 @@ export const lightTheme: Theme = {
   invInk: '#ffffff',
   cyan: '#0e7490',
   heat: { 1: '#ece8fb', 2: '#c3b1fa', 3: '#8b6bf7', 4: '#4b31a8', 5: '#6d3bf5' },
+  heatLegend: ['#ece8fb', '#c3b1fa', '#8b6bf7', '#4b31a8'],
+  barMuted: '#c3b1fa',
+  legendMuted: '#b8b9c4',
   sleepIdle: '#e3e0f6',
   glassEmpty: '#e8e9ef',
   rangeActiveBg: '#e2e3ea',

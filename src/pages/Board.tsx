@@ -17,9 +17,7 @@ import { Touchable } from '@/components/Touchable';
 import { Pill, PrimaryButton, ProgressRing, StatChip, Txt } from '@/components/ui';
 import { useAppStore } from '@/state/store';
 import type { BoardCard, ColumnKey } from '@/state/types';
-import { CURVE, DURATION } from '@/theme/motion';
-import { accent } from '@/theme/tokens';
-import { useTheme } from '@/theme/useTheme';
+import { accent, CURVE, DURATION, elevation, layer, radius, space, useTheme } from '@/theme';
 
 interface Frame {
   x: number;
@@ -168,7 +166,7 @@ export function Board() {
   }));
 
   return (
-    <View style={{ flex: 1, paddingHorizontal: 26 }}>
+    <View style={{ flex: 1, paddingHorizontal: space.gutter }}>
       <PageHeader
         title="Everything"
         accent="in flight"
@@ -192,7 +190,7 @@ export function Board() {
         style={{
           flex: 1,
           flexDirection: 'row',
-          gap: 18,
+          gap: space.gap,
           paddingBottom: 30,
           borderTopWidth: 1,
           borderTopColor: t.lineSoft,
@@ -211,8 +209,8 @@ export function Board() {
               style={{
                 flex: 1,
                 minWidth: 0,
-                padding: 18,
-                borderRadius: 22,
+                padding: space.cardPad,
+                borderRadius: radius.card,
                 borderWidth: active ? 2 : 1,
                 borderColor: active ? accent.purple : t.line,
                 backgroundColor: active ? t.boardColActiveBg : t.boardColBg,
@@ -228,7 +226,7 @@ export function Board() {
                   style={{
                     paddingHorizontal: 11,
                     paddingVertical: 4,
-                    borderRadius: 999,
+                    borderRadius: radius.pill,
                     backgroundColor: t.pill,
                     borderWidth: 1,
                     borderColor: t.pillLine,
@@ -267,7 +265,7 @@ export function Board() {
                   activeScale={0.98}
                   style={{
                     padding: 12,
-                    borderRadius: 14,
+                    borderRadius: radius.cell,
                     borderWidth: 1,
                     borderStyle: 'dashed',
                     borderColor: t.btnLineDash,
@@ -286,8 +284,8 @@ export function Board() {
         <View
           style={{
             width: 320,
-            padding: 18,
-            borderRadius: 22,
+            padding: space.cardPad,
+            borderRadius: radius.card,
             backgroundColor: t.card,
             borderWidth: 1,
             borderColor: t.line,
@@ -328,7 +326,7 @@ export function Board() {
                   gap: 12,
                   paddingVertical: 11,
                   paddingHorizontal: 8,
-                  borderRadius: 14,
+                  borderRadius: radius.cell,
                 }}
               >
                 <Checkbox checked={task.done} />
@@ -357,7 +355,7 @@ export function Board() {
                 marginTop: 6,
                 marginHorizontal: 8,
                 padding: 12,
-                borderRadius: 14,
+                borderRadius: radius.cell,
                 borderWidth: 1,
                 borderStyle: 'dashed',
                 borderColor: t.btnLineDash,
@@ -379,17 +377,13 @@ export function Board() {
                 position: 'absolute',
                 left: 0,
                 top: 0,
-                zIndex: 70,
+                zIndex: layer.dragGhost,
                 padding: 14,
-                borderRadius: 16,
+                borderRadius: radius.tile,
                 backgroundColor: t.name === 'light' ? '#ffffff' : '#1c1b22',
                 borderWidth: 1,
                 borderColor: t.btnLineSoft,
-                shadowColor: '#000',
-                shadowOpacity: 0.6,
-                shadowRadius: 30,
-                shadowOffset: { width: 0, height: 24 },
-                elevation: 20,
+                ...elevation.dragGhost,
               },
               ghostStyle,
             ]}
@@ -437,7 +431,7 @@ function Checkbox({ checked }: { checked: boolean }) {
         {
           width: 21,
           height: 21,
-          borderRadius: 7,
+          borderRadius: radius.check,
           borderWidth: 1.5,
           alignItems: 'center',
           justifyContent: 'center',
@@ -551,7 +545,7 @@ function DraggableCard({
           }}
           style={{
             padding: 14,
-            borderRadius: 16,
+            borderRadius: radius.tile,
             backgroundColor: t.surface2,
             borderWidth: 1,
             borderColor: t.pillLineSoft,

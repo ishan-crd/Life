@@ -1,3 +1,4 @@
 export * from './tokens';
-export * from './useTheme';
+export * from './scale';
 export * from './motion';
+export * from './ThemeProvider';

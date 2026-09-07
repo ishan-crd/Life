@@ -1,10 +1,10 @@
 import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, TextInput, View } from 'react-native';
 import Animated, { FadeIn, FadeOut, SlideInDown, SlideOutDown } from 'react-native-reanimated';
-import { useTheme } from '@/theme/useTheme';
 import { Icon } from './Icon';
 import { Touchable } from './Touchable';
 import { PrimaryButton, Txt } from './ui';
+import { elevation, radius, size as metric, space, useTheme, type as typeScale } from '@/theme';
 
 export interface SheetOption {
   label: string;
@@ -90,16 +90,12 @@ export function SheetProvider({ children }: { children: React.ReactNode }) {
                   style={{
                     width: 520,
                     maxWidth: '96%',
-                    borderRadius: 26,
+                    borderRadius: radius.sheet,
                     backgroundColor: t.card,
                     borderWidth: 1,
                     borderColor: t.line,
-                    padding: 24,
-                    shadowColor: '#000',
-                    shadowOpacity: 0.5,
-                    shadowRadius: 40,
-                    shadowOffset: { width: 0, height: 24 },
-                    elevation: 24,
+                    padding: space.sheetPad,
+                    ...elevation.sheet,
                   }}
                 >
                   {spec ? (
@@ -110,7 +106,7 @@ export function SheetProvider({ children }: { children: React.ReactNode }) {
                             {spec.title}
                           </Txt>
                           {spec.subtitle ? (
-                            <Txt size={13} color={t.muted2} style={{ marginTop: 4 }}>
+                            <Txt size={typeScale.small} color={t.muted2} style={{ marginTop: 4 }}>
                               {spec.subtitle}
                             </Txt>
                           ) : null}
@@ -120,9 +116,9 @@ export function SheetProvider({ children }: { children: React.ReactNode }) {
                           activeScale={0.9}
                           accessibilityLabel="Close"
                           style={{
-                            width: 34,
-                            height: 34,
-                            borderRadius: 17,
+                            width: metric.cardButton,
+                            height: metric.cardButton,
+                            borderRadius: metric.cardButton / 2,
                             alignItems: 'center',
                             justifyContent: 'center',
                             backgroundColor: t.surface2,
@@ -155,7 +151,7 @@ export function SheetProvider({ children }: { children: React.ReactNode }) {
                                         gap: 8,
                                         paddingHorizontal: 14,
                                         paddingVertical: 10,
-                                        borderRadius: 999,
+                                        borderRadius: radius.pill,
                                         backgroundColor: active ? t.surface3 : 'transparent',
                                         borderWidth: 1,
                                         borderColor: active ? t.btnLine : t.pillLine,
@@ -187,7 +183,7 @@ export function SheetProvider({ children }: { children: React.ReactNode }) {
                                   backgroundColor: t.surface2,
                                   borderWidth: 1,
                                   borderColor: t.pillLineSoft,
-                                  borderRadius: 14,
+                                  borderRadius: radius.cell,
                                   paddingHorizontal: 14,
                                   paddingVertical: 12,
                                   minHeight: f.kind === 'multiline' ? 96 : 46,
@@ -212,9 +208,9 @@ export function SheetProvider({ children }: { children: React.ReactNode }) {
                               flexDirection: 'row',
                               alignItems: 'center',
                               gap: 8,
-                              height: 48,
-                              paddingHorizontal: 18,
-                              borderRadius: 999,
+                              height: metric.action,
+                              paddingHorizontal: space.lg,
+                              borderRadius: radius.pill,
                               borderWidth: 1,
                               borderColor: t.btnLine,
                             }}

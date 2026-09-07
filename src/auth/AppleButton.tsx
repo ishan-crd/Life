@@ -3,6 +3,7 @@ import { View } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
 import { Touchable } from '@/components/Touchable';
 import { Txt } from '@/components/ui';
+import { radius, size as metric } from '@/theme';
 
 /** Apple's mark, drawn inline so the button needs no image asset. */
 function AppleGlyph({ size = 19, color = '#ffffff' }: { size?: number; color?: string }) {
@@ -42,8 +43,8 @@ export function AppleButton({
       accessibilityRole="button"
       accessibilityLabel={label}
       style={{
-        height: 54,
-        borderRadius: 999,
+        height: metric.formButton,
+        borderRadius: radius.pill,
         backgroundColor: '#000000',
         borderWidth: 1,
         borderColor: '#000000',

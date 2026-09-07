@@ -1,5 +1,3 @@
-export const DAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
-
 /** Monday-first weekday index (0 = Monday). */
 export function isoDay(d: Date): number {
   return (d.getDay() + 6) % 7;

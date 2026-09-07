@@ -1,7 +1,7 @@
 import React, { forwardRef, useEffect } from 'react';
 import type { LayoutChangeEvent, StyleProp, View, ViewStyle } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
-import { CURVE, DURATION } from '@/theme/motion';
+import { CURVE, DURATION } from '@/theme';
 
 /** `@keyframes riseIn` — the staggered 12px lift used across the overview. */
 export const RiseIn = forwardRef<View, {

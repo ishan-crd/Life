@@ -6,6 +6,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFonts } from 'expo-font';
+import { ThemeProvider, useTheme } from '@/theme';
 // Subpath imports keep only the four weights we use in the bundle.
 import PlusJakartaSans_400Regular from '@expo-google-fonts/plus-jakarta-sans/400Regular/PlusJakartaSans_400Regular.ttf';
 import PlusJakartaSans_500Medium from '@expo-google-fonts/plus-jakarta-sans/500Medium/PlusJakartaSans_500Medium.ttf';
@@ -24,7 +25,6 @@ import { AuthScreen } from '@/auth/AuthScreen';
 import { Onboarding } from '@/auth/Onboarding';
 import { useProfileStore } from '@/state/profile';
 import { PAGE_TITLES, useAppStore } from '@/state/store';
-import { useTheme } from '@/theme/useTheme';
 
 SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
@@ -136,7 +136,11 @@ function Dashboard() {
       submitLabel: 'Save name',
       fields: [{ key: 'name', label: 'Display name', initial: profile?.name ?? '', required: true }],
       onSubmit: (v) => useProfileStore.getState().setName(v.name.trim()),
-      onDelete: () => useProfileStore.getState().signOut(),
+      onDelete: () => {
+        // A device can hold more than one local account, so leave nothing behind.
+        useAppStore.getState().resetAll();
+        useProfileStore.getState().signOut();
+      },
       deleteLabel: 'Sign out',
     });
   }, [openSheet]);
@@ -203,8 +207,10 @@ export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <StatusBar style={light ? 'dark' : 'light'} />
-        <Root />
+        <ThemeProvider>
+          <StatusBar style={light ? 'dark' : 'light'} />
+          <Root />
+        </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );

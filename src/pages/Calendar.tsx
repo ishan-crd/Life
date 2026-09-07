@@ -9,8 +9,7 @@ import { dateKey, daysInMonth, fmtLongDate, fmtMonth, monthLead, to12h } from '@
 import { useNow } from '@/lib/useNow';
 import { useAppStore } from '@/state/store';
 import type { CalEvent } from '@/state/types';
-import { accent } from '@/theme/tokens';
-import { useTheme } from '@/theme/useTheme';
+import { accent, radius, space, useTheme } from '@/theme';
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const CELLS = 35;
@@ -114,7 +113,7 @@ export function Calendar() {
   );
 
   return (
-    <View style={{ flex: 1, paddingHorizontal: 26 }}>
+    <View style={{ flex: 1, paddingHorizontal: space.gutter }}>
       <PageHeader
         title="Calendar"
         accent={fmtMonth(cursor)}
@@ -144,7 +143,7 @@ export function Calendar() {
         style={{
           flex: 1,
           flexDirection: 'row',
-          gap: 18,
+          gap: space.gap,
           paddingBottom: 30,
           borderTopWidth: 1,
           borderTopColor: t.lineSoft,
@@ -155,8 +154,8 @@ export function Calendar() {
           style={{
             flex: 1,
             minWidth: 0,
-            padding: 18,
-            borderRadius: 22,
+            padding: space.cardPad,
+            borderRadius: radius.card,
             backgroundColor: t.card,
             borderWidth: 1,
             borderColor: t.line,
@@ -183,7 +182,7 @@ export function Calendar() {
                       activeScale={0.97}
                       style={{
                         flex: 1,
-                        borderRadius: 14,
+                        borderRadius: radius.cell,
                         paddingVertical: 9,
                         paddingHorizontal: 10,
                         justifyContent: 'space-between',
@@ -221,13 +220,13 @@ export function Calendar() {
           </View>
         </View>
 
-        <View style={{ width: 348, gap: 18 }}>
+        <View style={{ width: 348, gap: space.gap }}>
           <View
             style={{
               flex: 1,
               minHeight: 0,
-              padding: 18,
-              borderRadius: 22,
+              padding: space.cardPad,
+              borderRadius: radius.card,
               backgroundColor: t.card,
               borderWidth: 1,
               borderColor: t.line,
@@ -266,7 +265,7 @@ export function Calendar() {
                   style={{
                     paddingVertical: 12,
                     paddingHorizontal: 14,
-                    borderRadius: 16,
+                    borderRadius: radius.tile,
                     backgroundColor: t.surface2,
                     borderWidth: 1,
                     borderColor: t.pillLineSoft,
@@ -304,8 +303,8 @@ export function Calendar() {
 
           <View
             style={{
-              padding: 18,
-              borderRadius: 22,
+              padding: space.cardPad,
+              borderRadius: radius.card,
               backgroundColor: t.card,
               borderWidth: 1,
               borderColor: t.line,

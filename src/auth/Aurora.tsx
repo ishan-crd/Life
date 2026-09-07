@@ -8,8 +8,7 @@ import Animated, {
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
-import { accent } from '@/theme/tokens';
-import { useTheme } from '@/theme/useTheme';
+import { accent, useTheme } from '@/theme';
 
 interface BlobProps {
   color: string;
@@ -18,12 +17,11 @@ interface BlobProps {
   y: number;
   drift: number;
   duration: number;
-  delay?: number;
   opacity?: number;
 }
 
 /** A slow-drifting radial glow — the aurora behind the sign-in panel. */
-function Blob({ color, size, x, y, drift, duration, delay = 0, opacity = 0.55 }: BlobProps) {
+function Blob({ color, size, x, y, drift, duration, opacity = 0.55 }: BlobProps) {
   const progress = useSharedValue(0);
   const id = `blob-${color.replace('#', '')}-${Math.round(x)}-${Math.round(y)}`;
 

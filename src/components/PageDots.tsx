@@ -2,9 +2,9 @@ import React from 'react';
 import { View } from 'react-native';
 import Animated, { interpolate, interpolateColor, useAnimatedStyle } from 'react-native-reanimated';
 import { PAGE_COUNT, useAppStore } from '@/state/store';
-import { useTheme } from '@/theme/useTheme';
 import { usePager } from './Pager';
 import { Txt } from './ui';
+import { radius, useTheme, type as typeScale } from '@/theme';
 
 const HINTS = [
   'Swipe left for the board',
@@ -24,7 +24,7 @@ function Dot({ index }: { index: number }) {
       backgroundColor: interpolateColor(Math.min(d, 1), [0, 1], [t.dotActive, t.dotIdle]),
     };
   }, [t.dotActive, t.dotIdle, index]);
-  return <Animated.View style={[{ height: 6, borderRadius: 999 }, style]} />;
+  return <Animated.View style={[{ height: 6, borderRadius: radius.pill }, style]} />;
 }
 
 /** Bottom page indicator with the design's expanding active pill. */
@@ -48,7 +48,7 @@ export function PageDots() {
       {Array.from({ length: PAGE_COUNT }, (_, i) => (
         <Dot key={i} index={i} />
       ))}
-      <Txt size={11} color={t.muted3} style={{ marginLeft: 8 }}>
+      <Txt size={typeScale.micro} color={t.muted3} style={{ marginLeft: 8 }}>
         {HINTS[page]}
       </Txt>
     </View>

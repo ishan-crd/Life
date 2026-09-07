@@ -1,11 +1,10 @@
 import React, { useCallback } from 'react';
 import { View } from 'react-native';
-import { accent } from '@/theme/tokens';
-import { useTheme } from '@/theme/useTheme';
 import { PAGE_TITLES, useAppStore } from '@/state/store';
 import { ConicDisc } from './ConicDisc';
 import { RoundButton, Txt } from './ui';
 import { Touchable } from './Touchable';
+import { accent, radius, size as metric, space, tracking, useTheme, type as typeScale } from '@/theme';
 
 const BRAND_STOPS = [
   { color: '#c4b5fd', to: 150 },
@@ -38,8 +37,8 @@ export const Header = React.memo(function Header({
   return (
     <View
       style={{
-        height: 108,
-        paddingHorizontal: 26,
+        height: metric.header,
+        paddingHorizontal: space.gutter,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -49,7 +48,7 @@ export const Header = React.memo(function Header({
         <View style={{ width: 38, height: 38, borderRadius: 19, overflow: 'hidden' }}>
           <ConicDisc size={38} from={200} stops={BRAND_STOPS} />
         </View>
-        <Txt size={24} weight="semibold" tracking={-0.02}>
+        <Txt size={typeScale.brand} weight="semibold" tracking={tracking.heading}>
           Loud
         </Txt>
       </View>
@@ -66,15 +65,11 @@ export const Header = React.memo(function Header({
               style={{
                 paddingHorizontal: 22,
                 paddingVertical: 13,
-                borderRadius: 999,
+                borderRadius: radius.pill,
                 backgroundColor: active ? t.invBg : 'transparent',
               }}
             >
-              <Txt
-                size={14}
-                weight={active ? 'medium' : 'medium'}
-                color={active ? t.invInk : t.muted}
-              >
+              <Txt size={typeScale.body} weight="medium" color={active ? t.invInk : t.muted}>
                 {label}
               </Txt>
             </Touchable>
@@ -85,7 +80,7 @@ export const Header = React.memo(function Header({
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, justifyContent: 'flex-end' }}>
         <RoundButton
           icon="search"
-          size={46}
+          size={metric.headerButton}
           iconSize={18}
           variant="chip"
           activeScale={0.92}
@@ -94,7 +89,7 @@ export const Header = React.memo(function Header({
         />
         <RoundButton
           icon={light ? 'moon' : 'sun'}
-          size={46}
+          size={metric.headerButton}
           iconSize={18}
           variant="chip"
           activeScale={0.92}
@@ -105,7 +100,7 @@ export const Header = React.memo(function Header({
         <View>
           <RoundButton
             icon="bell"
-            size={46}
+            size={metric.headerButton}
             iconSize={18}
             variant="chip"
             activeScale={0.92}
@@ -133,9 +128,9 @@ export const Header = React.memo(function Header({
           activeScale={0.92}
           accessibilityLabel="Profile"
           style={{
-            width: 46,
-            height: 46,
-            borderRadius: 23,
+            width: metric.headerButton,
+            height: metric.headerButton,
+            borderRadius: metric.headerButton / 2,
             overflow: 'hidden',
             borderWidth: 1,
             borderColor: t.pillLine,
@@ -144,7 +139,7 @@ export const Header = React.memo(function Header({
             backgroundColor: t.surface3,
           }}
         >
-          <ConicDisc size={46} from={20} stops={BRAND_STOPS} />
+          <ConicDisc size={metric.headerButton} from={20} stops={BRAND_STOPS} />
           <View style={{ position: 'absolute' }}>
             <Txt size={16} weight="semibold" color="#fff">
               A

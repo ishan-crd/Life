@@ -1,9 +1,8 @@
 import React, { useEffect } from 'react';
 import Svg, { Circle, Defs, Line, LinearGradient, Path, Stop } from 'react-native-svg';
 import Animated, { useAnimatedProps, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
-import { accent } from '@/theme/tokens';
-import { CURVE } from '@/theme/motion';
-import type { Theme } from '@/theme/tokens';
+import type { Theme } from '@/theme';
+import { accent, CURVE } from '@/theme';
 
 const AnimatedPath = Animated.createAnimatedComponent(Path);
 

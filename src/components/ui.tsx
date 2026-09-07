@@ -7,10 +7,9 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { CURVE, DURATION } from '@/theme/motion';
-import { useTheme } from '@/theme/useTheme';
 import { Icon, type IconName } from './Icon';
 import { Touchable, type TouchableProps } from './Touchable';
+import { CURVE, DURATION, radius, size as metric, space, useTheme, type as typeScale } from '@/theme';
 
 export const FONT = {
   regular: 'PlusJakartaSans_400Regular',
@@ -35,7 +34,7 @@ interface TxtProps {
 /** Typography primitive — the design uses Plus Jakarta Sans throughout. */
 export function Txt({
   children,
-  size = 14,
+  size = typeScale.body,
   weight = 'regular',
   color,
   tracking,
@@ -66,7 +65,7 @@ export function Txt({
 export function Card({
   children,
   style,
-  padding = 20,
+  padding = space.cardPadWide,
 }: {
   children?: React.ReactNode;
   style?: StyleProp<ViewStyle>;
@@ -76,7 +75,13 @@ export function Card({
   return (
     <View
       style={[
-        { padding, borderRadius: 22, backgroundColor: t.card, borderWidth: 1, borderColor: t.line },
+        {
+          padding,
+          borderRadius: radius.card,
+          backgroundColor: t.card,
+          borderWidth: 1,
+          borderColor: t.line,
+        },
         style,
       ]}
     >
@@ -108,7 +113,7 @@ export function Pill({
           gap: 8,
           paddingHorizontal: paddingH,
           paddingVertical: paddingV,
-          borderRadius: 999,
+          borderRadius: radius.pill,
           backgroundColor: t.pill,
           borderWidth: 1,
           borderColor: t.pillLine,
@@ -118,7 +123,7 @@ export function Pill({
     >
       {dot ? <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: dot }} /> : null}
       {typeof children === 'string' ? (
-        <Txt size={13} color={t.inkSoft}>
+        <Txt size={typeScale.small} color={t.inkSoft}>
           {children}
         </Txt>
       ) : (
@@ -140,7 +145,7 @@ interface RoundButtonProps extends Omit<TouchableProps, 'children'> {
 /** The circular icon buttons used in the header and every card corner. */
 export function RoundButton({
   icon,
-  size = 34,
+  size = metric.cardButton,
   iconSize,
   variant = 'surface',
   color,
@@ -198,16 +203,16 @@ export function GhostButton({
           flexDirection: 'row',
           alignItems: 'center',
           gap: 9,
-          paddingHorizontal: 18,
+          paddingHorizontal: space.lg,
           paddingVertical: 14,
-          borderRadius: 999,
+          borderRadius: radius.pill,
           borderWidth: 1,
           borderColor: t.btnLine,
         },
         style,
       ]}
     >
-      <Txt size={15} color={t.ink}>
+      <Txt size={typeScale.control} color={t.ink}>
         {label}
       </Txt>
       {icon ? <Icon name={icon} size={15} color={t.ink} strokeWidth={1.9} /> : null}
@@ -238,9 +243,9 @@ export function PrimaryButton({
           flexDirection: 'row',
           alignItems: 'center',
           gap: 9,
-          height: 48,
+          height: metric.action,
           paddingHorizontal: 20,
-          borderRadius: 999,
+          borderRadius: radius.pill,
           backgroundColor: t.invBg,
         },
         style,
@@ -263,9 +268,9 @@ export function StatChip({ left, right }: { left: string; right: string }) {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 14,
-        height: 48,
+        height: metric.action,
         paddingHorizontal: 20,
-        borderRadius: 999,
+        borderRadius: radius.pill,
         backgroundColor: t.chip,
         borderWidth: 1,
         borderColor: t.lineSoft,
@@ -290,7 +295,7 @@ const AnimatedCircle = Animated.createAnimatedComponent(Circle);
  */
 export function ProgressRing({
   progress,
-  size = 44,
+  size = metric.dial,
   color,
   label,
 }: {
@@ -331,7 +336,7 @@ export function ProgressRing({
           transform={`rotate(-90 ${size / 2} ${size / 2})`}
         />
       </Svg>
-      <Txt size={11} weight="semibold" color={t.inkSoft}>
+      <Txt size={typeScale.micro} weight="semibold" color={t.inkSoft}>
         {label}
       </Txt>
     </View>
@@ -351,10 +356,10 @@ export function Meter({ pct, color, height = 6 }: { pct: number; color: string; 
     [pct]
   );
   return (
-    <View
-      style={{ height, borderRadius: 999, backgroundColor: t.surface3, overflow: 'hidden' }}
-    >
-      <Animated.View style={[{ height: '100%', borderRadius: 999, backgroundColor: color }, style]} />
+    <View style={{ height, borderRadius: radius.pill, backgroundColor: t.surface3, overflow: 'hidden' }}>
+      <Animated.View
+        style={[{ height: '100%', borderRadius: radius.pill, backgroundColor: color }, style]}
+      />
     </View>
   );
 }

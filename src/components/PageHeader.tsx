@@ -1,7 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
-import { useTheme } from '@/theme/useTheme';
 import { Txt } from './ui';
+import { tracking, useTheme, type as typeScale } from '@/theme';
 
 /**
  * The 44px page title ("Everything in flight") with a dimmed second half and a
@@ -27,9 +27,16 @@ export function PageHeader({
         paddingBottom: 22,
       }}
     >
-      <Txt size={44} weight="medium" tracking={-0.03} numberOfLines={1}>
+      <Txt size={typeScale.pageTitle} weight="medium" tracking={tracking.title} numberOfLines={1}>
         {title}
-        {accentText ? <Txt size={44} weight="medium" tracking={-0.03} color={t.inkDim}>{` ${accentText}`}</Txt> : null}
+        {accentText ? (
+          <Txt
+            size={typeScale.pageTitle}
+            weight="medium"
+            tracking={tracking.title}
+            color={t.inkDim}
+          >{` ${accentText}`}</Txt>
+        ) : null}
       </Txt>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>{right}</View>
     </View>

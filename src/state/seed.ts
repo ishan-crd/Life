@@ -1,6 +1,6 @@
-import { accent } from '@/theme/tokens';
 import { dateKey, daysInMonth } from '@/lib/date';
 import type { BoardColumn, CalEvent, EventMap, Habit, Med, Note, Task, WeekSplitRow } from './types';
+import { accent } from '@/theme';
 
 export const seedTasks: Task[] = [
   { id: 't1', label: 'Check Clipstake Discord', meta: 'Community · morning', done: true },

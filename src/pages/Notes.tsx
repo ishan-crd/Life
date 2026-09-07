@@ -1,13 +1,14 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { ScrollView, TextInput, View } from 'react-native';
 import { PageHeader } from '@/components/PageHeader';
 import { RiseIn } from '@/components/RiseIn';
 import { useSheet } from '@/components/Sheet';
 import { Touchable } from '@/components/Touchable';
 import { FONT, Pill, PrimaryButton, RoundButton, StatChip, Txt } from '@/components/ui';
+import { useNow } from '@/lib/useNow';
 import { tagColor, useAppStore } from '@/state/store';
 import type { Note } from '@/state/types';
-import { useTheme } from '@/theme/useTheme';
+import { radius, space, useTheme } from '@/theme';
 
 const COLUMNS = 4;
 
@@ -47,15 +48,16 @@ export function Notes() {
 
   const [editing, setEditing] = useState<string | null>(null);
   const columns = useMemo(() => layout(notes), [notes]);
+  const now = useNow(30_000);
 
   const lastEdited = useMemo(() => {
     const newest = notes.reduce((max, n) => Math.max(max, n.updatedAt), 0);
     if (!newest) return 'edited recently';
-    const mins = Math.floor((Date.now() - newest) / 60000);
+    const mins = Math.floor((now.getTime() - newest) / 60000);
     if (mins < 1) return 'edited just now';
     if (mins < 60) return `edited ${mins}m ago`;
     return `edited ${Math.floor(mins / 60)}h ago`;
-  }, [notes]);
+  }, [notes, now]);
 
   const openNoteSheet = useCallback(
     (note: Note) => {
@@ -86,8 +88,10 @@ export function Notes() {
     setEditing(id);
   }, [addNote]);
 
+  const stopEditing = useCallback(() => setEditing(null), []);
+
   return (
-    <View style={{ flex: 1, paddingHorizontal: 26 }}>
+    <View style={{ flex: 1, paddingHorizontal: space.gutter }}>
       <PageHeader
         title="Notes"
         accent="& scraps"
@@ -105,91 +109,21 @@ export function Notes() {
       >
         <ScrollView
           style={{ flex: 1 }}
-          contentContainerStyle={{ flexDirection: 'row', gap: 18, paddingBottom: 30 }}
+          contentContainerStyle={{ flexDirection: 'row', gap: space.gap, paddingBottom: 30 }}
           showsVerticalScrollIndicator={false}
         >
           {columns.map((col, ci) => (
-            <View key={ci} style={{ flex: 1, gap: 18 }}>
+            <View key={ci} style={{ flex: 1, gap: space.gap }}>
               {col.map((note) => (
-                <View
+                <NoteCard
                   key={note.id}
-                  style={{
-                    padding: 18,
-                    borderRadius: 22,
-                    backgroundColor: t.card,
-                    borderWidth: 1,
-                    borderColor: editing === note.id ? t.btnLine : t.line,
-                  }}
-                >
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: 10,
-                    }}
-                  >
-                    <Pill dot={note.dot} paddingH={11} paddingV={5}>
-                      <Txt size={12} color={t.inkSoft}>
-                        {note.tag}
-                      </Txt>
-                    </Pill>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                      <Txt size={12} color={t.muted2}>
-                        {note.when}
-                      </Txt>
-                      <RoundButton
-                        icon="dots"
-                        size={26}
-                        iconSize={13}
-                        variant="outline"
-                        color={t.muted3}
-                        style={{ borderColor: 'transparent' }}
-                        accessibilityLabel="Note options"
-                        onPress={() => openNoteSheet(note)}
-                      />
-                    </View>
-                  </View>
-
-                  <Touchable
-                    onPress={() => setEditing(note.id)}
-                    haptic={false}
-                    activeScale={1}
-                    style={{ marginTop: 12 }}
-                  >
-                    {editing === note.id ? (
-                      <TextInput
-                        autoFocus
-                        multiline
-                        value={note.text}
-                        onChangeText={(text) => updateNote(note.id, { text })}
-                        onBlur={() => setEditing(null)}
-                        placeholder="Write it down…"
-                        placeholderTextColor={t.muted3}
-                        style={{
-                          fontFamily: note.weight === '400' ? FONT.regular : FONT.medium,
-                          fontSize: note.size,
-                          lineHeight: note.size * 1.35,
-                          letterSpacing: -0.01 * note.size,
-                          color: t.ink,
-                          backgroundColor: t.surface2,
-                          borderRadius: 10,
-                          padding: 8,
-                          margin: -8,
-                        }}
-                      />
-                    ) : (
-                      <Txt
-                        size={note.size}
-                        weight={note.weight === '400' ? 'regular' : 'medium'}
-                        lineHeight={1.35}
-                        tracking={-0.01}
-                      >
-                        {note.text || 'Write it down…'}
-                      </Txt>
-                    )}
-                  </Touchable>
-                </View>
+                  note={note}
+                  editing={editing === note.id}
+                  onStartEditing={setEditing}
+                  onStopEditing={stopEditing}
+                  onCommit={updateNote}
+                  onOptions={openNoteSheet}
+                />
               ))}
             </View>
           ))}
@@ -198,3 +132,120 @@ export function Notes() {
     </View>
   );
 }
+
+/**
+ * One note tile.
+ *
+ * While a note is being edited the text lives in local state and is committed
+ * on blur. Writing every keystroke to the store would re-run the masonry
+ * layout, re-render every sibling tile, and push a write to AsyncStorage per
+ * character.
+ */
+const NoteCard = React.memo(function NoteCard({
+  note,
+  editing,
+  onStartEditing,
+  onStopEditing,
+  onCommit,
+  onOptions,
+}: {
+  note: Note;
+  editing: boolean;
+  onStartEditing(id: string): void;
+  onStopEditing(): void;
+  onCommit(id: string, patch: Partial<Omit<Note, 'id'>>): void;
+  onOptions(note: Note): void;
+}) {
+  const t = useTheme();
+  // The editor is uncontrolled: typing touches a ref, never React state, so a
+  // long note costs zero re-renders until it is committed.
+  const draft = useRef(note.text);
+
+  const commit = useCallback(() => {
+    if (draft.current !== note.text) onCommit(note.id, { text: draft.current });
+    onStopEditing();
+  }, [note.text, note.id, onCommit, onStopEditing]);
+
+  return (
+    <View
+      style={{
+        padding: space.cardPad,
+        borderRadius: radius.card,
+        backgroundColor: t.card,
+        borderWidth: 1,
+        borderColor: editing ? t.btnLine : t.line,
+      }}
+    >
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 10,
+        }}
+      >
+        <Pill dot={note.dot} paddingH={11} paddingV={5}>
+          <Txt size={12} color={t.inkSoft}>
+            {note.tag}
+          </Txt>
+        </Pill>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          <Txt size={12} color={t.muted2}>
+            {note.when}
+          </Txt>
+          <RoundButton
+            icon="dots"
+            size={26}
+            iconSize={13}
+            variant="outline"
+            color={t.muted3}
+            style={{ borderColor: 'transparent' }}
+            accessibilityLabel="Note options"
+            onPress={() => onOptions(note)}
+          />
+        </View>
+      </View>
+
+      <Touchable
+        onPress={() => onStartEditing(note.id)}
+        haptic={false}
+        activeScale={1}
+        style={{ marginTop: 12 }}
+      >
+        {editing ? (
+          <TextInput
+            autoFocus
+            multiline
+            defaultValue={note.text}
+            onChangeText={(text) => {
+              draft.current = text;
+            }}
+            onBlur={commit}
+            placeholder="Write it down…"
+            placeholderTextColor={t.muted3}
+            style={{
+              fontFamily: note.weight === '400' ? FONT.regular : FONT.medium,
+              fontSize: note.size,
+              lineHeight: note.size * 1.35,
+              letterSpacing: -0.01 * note.size,
+              color: t.ink,
+              backgroundColor: t.surface2,
+              borderRadius: 10,
+              padding: 8,
+              margin: -8,
+            }}
+          />
+        ) : (
+          <Txt
+            size={note.size}
+            weight={note.weight === '400' ? 'regular' : 'medium'}
+            lineHeight={1.35}
+            tracking={-0.01}
+          >
+            {note.text || 'Write it down…'}
+          </Txt>
+        )}
+      </Touchable>
+    </View>
+  );
+});

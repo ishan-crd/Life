@@ -2,7 +2,6 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { uid } from '@/lib/id';
-import { accent } from '@/theme/tokens';
 import {
   seedColumns,
   seedHabits,
@@ -24,6 +23,7 @@ import type {
   Task,
   WeekSplitRow,
 } from './types';
+import { accent } from '@/theme';
 
 export const PAGE_COUNT = 5;
 export const PAGE_TITLES = ['Overview', 'Board', 'Calendar', 'Habits', 'Notes'] as const;
@@ -56,9 +56,7 @@ export interface AppState {
   streak: number;
 
   selectedDate: string | null;
-  visibleMonth: string | null;
 
-  setLight(light: boolean): void;
   toggleTheme(): void;
   setPage(page: number): void;
   setRange(range: number): void;
@@ -97,11 +95,8 @@ export interface AppState {
   updateEvent(dateKey: string, id: string, patch: Partial<Omit<CalEvent, 'id'>>): void;
   removeEvent(dateKey: string, id: string): void;
   selectDate(dateKey: string | null): void;
-  setVisibleMonth(monthKey: string): void;
 
   addWater(): void;
-  setWater(n: number): void;
-  updateWeekSplit(id: string, patch: Partial<Omit<WeekSplitRow, 'id'>>): void;
 
   applyOnboarding(input: {
     rituals: string[];
@@ -149,7 +144,6 @@ const initial = {
   sleepWeek: [62, 78, 55, 88, 70, 96, 74],
   streak: 17,
   selectedDate: null,
-  visibleMonth: null,
 };
 
 export const useAppStore = create<AppState>()(
@@ -158,7 +152,6 @@ export const useAppStore = create<AppState>()(
       hydrated: false,
       ...initial,
 
-      setLight: (light) => set({ light }),
       toggleTheme: () => set((s) => ({ light: !s.light })),
       setPage: (page) => set({ page: Math.max(0, Math.min(PAGE_COUNT - 1, page)) }),
       setRange: (range) => set({ range }),
@@ -294,12 +287,8 @@ export const useAppStore = create<AppState>()(
       removeEvent: (key, id) =>
         set((s) => ({ events: { ...s.events, [key]: (s.events[key] ?? []).filter((e) => e.id !== id) } })),
       selectDate: (selectedDate) => set({ selectedDate }),
-      setVisibleMonth: (visibleMonth) => set({ visibleMonth }),
 
       addWater: () => set((s) => ({ water: s.water >= s.waterGoal ? 0 : s.water + 1 })),
-      setWater: (n) => set((s) => ({ water: Math.max(0, Math.min(s.waterGoal, n)) })),
-      updateWeekSplit: (id, patch) =>
-        set((s) => ({ weekSplit: s.weekSplit.map((w) => (w.id === id ? { ...w, ...patch } : w)) })),
 
       /** Seeds the dashboard from the answers collected during onboarding. */
       applyOnboarding: ({ rituals, waterGoal, stepGoal, focusHours }) =>
@@ -319,13 +308,15 @@ export const useAppStore = create<AppState>()(
           focusLeft: Math.max(15, Math.min(90, Math.round((focusHours * 60) / 2))) * 60,
         })),
 
+      /** Wipes the dashboard back to its seed — used when an account signs out. */
       resetAll: () => set({ ...initial, events: {} }),
     }),
     {
       name: 'life-dashboard-v1',
       version: 1,
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: ({ hydrated, page, ...rest }) => rest,
+      // `hydrated` is runtime-only and `page` should always start at the overview.
+      partialize: ({ hydrated: _hydrated, page: _page, ...rest }) => rest,
       onRehydrateStorage: () => (state) => {
         useAppStore.setState({ hydrated: true });
         state?.setPage?.(0);
