@@ -46,9 +46,26 @@ src/
 springy presses. The pager reproduces the prototype's gesture exactly — 90px snap
 threshold, 0.28 rubber-banding at the ends, and a velocity-aware fling.
 
-**Theming.** The design drives colour through CSS custom properties with dark values as
-inline fallbacks and a `LIGHT` override map. Both sets are transcribed in
-`src/theme/tokens.ts` and switched by the header's sun/moon toggle.
+**Theming.** Everything visual resolves through `src/theme`, which is the single source
+of truth and is re-exported from one barrel (`import { accent, radius, space, useTheme }
+from '@/theme'`):
+
+| File | Holds |
+| --- | --- |
+| `tokens.ts` | The two palettes. The design drives colour through CSS custom properties with dark values as inline fallbacks and a `LIGHT` override map; both sets are transcribed here, plus a few tokens the design hardcoded (heatmap legend, muted bars) so they survive the theme flip. |
+| `scale.ts` | Radii, spacing, type sizes, tracking and fixed component heights. The design is not on an 8pt grid — it uses a specific set of values (26px gutters, 22px card radius, 9px chips) — so they are named rather than repeated as literals. |
+| `motion.ts` | The easing curves and durations lifted from the design's CSS transitions. |
+| `ThemeProvider.tsx` | Resolves the active theme once and hands it down by context. |
+
+`useTheme()` reads context, not the store. Hundreds of components need the palette, and
+subscribing each one to zustand would mean every subscriber re-evaluating on unrelated
+updates — the focus timer alone ticks once a second.
+
+**Render cost.** A few places are deliberately tuned: the focus countdown subscribes in a
+leaf component so the overview's charts and 34 animated bars never re-render for it; habit,
+pill and note rows are memoised so toggling one does not re-render its siblings; and the
+note editor is uncontrolled, so typing a long note costs no re-renders and no per-keystroke
+write to AsyncStorage.
 
 **Data.** There is no backend. Two zustand stores persist to `AsyncStorage`: one for the
 dashboard, one for the account and onboarding answers. Sign in with Apple uses
@@ -58,6 +75,7 @@ dashboard, one for the account and onboarding answers. Sign in with Apple uses
 
 ```bash
 npm run typecheck   # tsc --noEmit
+npm run lint        # eslint (expo config + typescript-eslint)
 npm run ios
 npm run android
 npm run web
