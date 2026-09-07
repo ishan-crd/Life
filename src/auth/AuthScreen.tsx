@@ -123,8 +123,9 @@ export function AuthScreen() {
       setError('Passwords need at least 6 characters.');
       return;
     }
+    const derived = email.trim().split('@')[0].replace(/[._-]+/g, ' ');
     signIn({
-      name: mode === 'signup' ? name.trim() : email.trim().split('@')[0],
+      name: mode === 'signup' ? name.trim() : derived.charAt(0).toUpperCase() + derived.slice(1),
       email: email.trim(),
       provider: 'email',
       accountId: hashId(email.trim().toLowerCase()),

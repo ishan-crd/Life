@@ -73,6 +73,16 @@ npm run web
 | --- | --- |
 | <img src="docs/calendar.png" width="420" /> | <img src="docs/habits.png" width="420" /> |
 
-| Notes | |
+| Notes | Light theme |
 | --- | --- |
-| <img src="docs/notes.png" width="420" /> | |
+| <img src="docs/notes.png" width="420" /> | <img src="docs/light-board.png" width="420" /> |
+
+## Building for a device
+
+```bash
+npx eas build --profile preview --platform ios     # internal / simulator build
+npx eas build --profile production --platform ios  # store build
+```
+
+Sign in with Apple needs a real build (it is unavailable in Expo Go and on web); the
+screen falls back to email with a clear message when it is not supported.
