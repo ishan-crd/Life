@@ -1,7 +1,7 @@
 import React from 'react';
 import { View } from 'react-native';
 import { Txt } from './ui';
-import { tracking, useTheme, type as typeScale } from '@/theme';
+import { tracking, useLayout, useTheme, type as typeScale } from '@/theme';
 
 /**
  * The 44px page title ("Everything in flight") with a dimmed second half and a
@@ -17,14 +17,18 @@ export function PageHeader({
   right?: React.ReactNode;
 }) {
   const t = useTheme();
+  const { compact } = useLayout();
   return (
     <View
       style={{
-        flexDirection: 'row',
-        alignItems: 'center',
+        // A phone cannot hold a 44px title and an action cluster on one line,
+        // so the cluster drops beneath the title instead of squeezing it.
+        flexDirection: compact ? 'column' : 'row',
+        alignItems: compact ? 'stretch' : 'center',
         justifyContent: 'space-between',
+        gap: compact ? 12 : 0,
         paddingTop: 6,
-        paddingBottom: 22,
+        paddingBottom: compact ? 16 : 22,
       }}
     >
       <Txt size={typeScale.pageTitle} weight="medium" tracking={tracking.title} numberOfLines={1}>
@@ -38,7 +42,7 @@ export function PageHeader({
           >{` ${accentText}`}</Txt>
         ) : null}
       </Txt>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>{right}</View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 10 }}>{right}</View>
     </View>
   );
 }

@@ -11,13 +11,14 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Icon } from '@/components/Icon';
 import { PageHeader } from '@/components/PageHeader';
+import { Panes } from '@/components/Panes';
 import { RiseIn } from '@/components/RiseIn';
 import { useSheet } from '@/components/Sheet';
 import { Touchable } from '@/components/Touchable';
 import { Pill, PrimaryButton, ProgressRing, StatChip, Txt } from '@/components/ui';
 import { useAppStore } from '@/state/store';
 import type { BoardCard, ColumnKey } from '@/state/types';
-import { accent, CURVE, DURATION, elevation, layer, radius, space, useTheme } from '@/theme';
+import { accent, CURVE, DURATION, elevation, layer, radius, useLayout, useTheme } from '@/theme';
 
 interface Frame {
   x: number;
@@ -39,6 +40,7 @@ function dotForTag(tag: string): string {
 
 export function Board() {
   const t = useTheme();
+  const { compact, gutter, cardPad } = useLayout();
   const { openSheet } = useSheet();
   const columns = useAppStore((s) => s.columns);
   const tasks = useAppStore((s) => s.tasks);
@@ -79,8 +81,8 @@ export function Board() {
    * Column hit-boxes must be in window space because the drag gesture reports
    * absolute coordinates, so re-measure on every layout pass.
    */
-  const onColumnLayout = useCallback(
-    (key: string) => (_e: LayoutChangeEvent) => {
+  const measureColumn = useCallback(
+    (key: string) => {
       columnRefs.current[key]?.measureInWindow((x, y, width, height) => {
         frames.current[key] = { x, y, w: width, h: height };
         framesSV.value = { ...frames.current };
@@ -88,6 +90,16 @@ export function Board() {
     },
     [framesSV]
   );
+
+  const onColumnLayout = useCallback(
+    (key: string) => (_e: LayoutChangeEvent) => measureColumn(key),
+    [measureColumn]
+  );
+
+  /** Stacked columns move under the finger as the page scrolls. */
+  const remeasureColumns = useCallback(() => {
+    for (const key of Object.keys(columnRefs.current)) measureColumn(key);
+  }, [measureColumn]);
 
   const beginDrag = useCallback((card: BoardCard, from: ColumnKey) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -166,7 +178,7 @@ export function Board() {
   }));
 
   return (
-    <View style={{ flex: 1, paddingHorizontal: space.gutter }}>
+    <View style={{ flex: 1, paddingHorizontal: gutter }}>
       <PageHeader
         title="Everything"
         accent="in flight"
@@ -189,14 +201,12 @@ export function Board() {
         }}
         style={{
           flex: 1,
-          flexDirection: 'row',
-          gap: space.gap,
-          paddingBottom: 30,
           borderTopWidth: 1,
           borderTopColor: t.lineSoft,
-          paddingTop: 20,
+          paddingTop: compact ? 14 : 20,
         }}
       >
+        <Panes onScroll={remeasureColumns}>
         {columns.map((col) => {
           const active = over === col.key && dragCard?.from !== col.key && !!dragCard;
           return (
@@ -207,9 +217,9 @@ export function Board() {
               }}
               onLayout={onColumnLayout(col.key)}
               style={{
-                flex: 1,
+                flex: compact ? undefined : 1,
                 minWidth: 0,
-                padding: space.cardPad,
+                padding: cardPad,
                 borderRadius: radius.card,
                 borderWidth: active ? 2 : 1,
                 borderColor: active ? accent.purple : t.line,
@@ -238,11 +248,7 @@ export function Board() {
                 </View>
               </View>
 
-              <ScrollView
-                style={{ flex: 1 }}
-                contentContainerStyle={{ gap: 10, paddingBottom: 4 }}
-                showsVerticalScrollIndicator={false}
-              >
+              <CardColumnList compact={compact}>
                 {col.cards.map((card) => (
                   <DraggableCard
                     key={card.id}
@@ -276,15 +282,15 @@ export function Board() {
                     + Add card
                   </Txt>
                 </Touchable>
-              </ScrollView>
+              </CardColumnList>
             </View>
           );
         })}
 
         <View
           style={{
-            width: 320,
-            padding: space.cardPad,
+            width: compact ? '100%' : 320,
+            padding: cardPad,
             borderRadius: radius.card,
             backgroundColor: t.card,
             borderWidth: 1,
@@ -313,7 +319,7 @@ export function Board() {
               label={`${Math.round(taskPct * 100)}%`}
             />
           </View>
-          <ScrollView style={{ flex: 1, marginHorizontal: -8 }} showsVerticalScrollIndicator={false}>
+          <CardColumnList compact={compact} style={{ marginHorizontal: -8 }}>
             {tasks.map((task) => (
               <Touchable
                 key={task.id}
@@ -366,8 +372,9 @@ export function Board() {
                 + Add ritual
               </Txt>
             </Touchable>
-          </ScrollView>
+          </CardColumnList>
         </View>
+        </Panes>
 
         {dragCard ? (
           <Animated.View
@@ -405,6 +412,31 @@ export function Board() {
         ) : null}
       </RiseIn>
     </View>
+  );
+}
+
+/**
+ * A column's cards scroll inside the column when the three sit side by side,
+ * and flow into the page's own scroll once they are stacked.
+ */
+function CardColumnList({
+  compact,
+  style,
+  children,
+}: {
+  compact: boolean;
+  style?: object;
+  children: React.ReactNode;
+}) {
+  if (compact) return <View style={[{ gap: 10 }, style]}>{children}</View>;
+  return (
+    <ScrollView
+      style={[{ flex: 1 }, style]}
+      contentContainerStyle={{ gap: 10, paddingBottom: 4 }}
+      showsVerticalScrollIndicator={false}
+    >
+      {children}
+    </ScrollView>
   );
 }
 

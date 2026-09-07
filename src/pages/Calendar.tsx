@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { PageHeader } from '@/components/PageHeader';
+import { Panes } from '@/components/Panes';
 import { ProteinDayLog } from '@/components/Protein';
 import { RiseIn } from '@/components/RiseIn';
 import { useSheet } from '@/components/Sheet';
@@ -10,7 +11,7 @@ import { dateKey, daysInMonth, fmtLongDate, fmtMonth, monthLead, to12h } from '@
 import { useNow } from '@/lib/useNow';
 import { proteinTotal, useAppStore } from '@/state/store';
 import type { CalEvent } from '@/state/types';
-import { accent, radius, space, useTheme } from '@/theme';
+import { accent, radius, useLayout, useTheme } from '@/theme';
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const CELLS = 35;
@@ -23,6 +24,7 @@ const COLOR_OPTIONS = [
 
 export function Calendar() {
   const t = useTheme();
+  const { compact, gutter, gap, cardPad, sideColumn } = useLayout();
   const now = useNow(60_000);
   const { openSheet } = useSheet();
 
@@ -122,7 +124,7 @@ export function Calendar() {
   );
 
   return (
-    <View style={{ flex: 1, paddingHorizontal: space.gutter }}>
+    <View style={{ flex: 1, paddingHorizontal: gutter }}>
       <PageHeader
         title="Calendar"
         accent={fmtMonth(cursor)}
@@ -151,19 +153,20 @@ export function Calendar() {
         delay={80}
         style={{
           flex: 1,
-          flexDirection: 'row',
-          gap: space.gap,
-          paddingBottom: 30,
           borderTopWidth: 1,
           borderTopColor: t.lineSoft,
-          paddingTop: 20,
+          paddingTop: compact ? 14 : 20,
         }}
       >
+        <Panes>
         <View
           style={{
-            flex: 1,
+            flex: compact ? undefined : 1,
             minWidth: 0,
-            padding: space.cardPad,
+            // Inside a stack the grid has no flex parent to fill, so it takes
+            // the height five rows of day cells actually need.
+            height: compact ? 320 : undefined,
+            padding: cardPad,
             borderRadius: radius.card,
             backgroundColor: t.card,
             borderWidth: 1,
@@ -248,12 +251,15 @@ export function Calendar() {
           </View>
         </View>
 
-        <View style={{ width: 348, gap: space.gap }}>
+        <View style={{ width: sideColumn ?? '100%', gap }}>
           <View
             style={{
-              flex: 1,
+              flex: compact ? undefined : 1,
+              // A stacked card has no flex parent, so the events list needs a
+              // height of its own to scroll inside.
+              height: compact ? 360 : undefined,
               minHeight: 0,
-              padding: space.cardPad,
+              padding: cardPad,
               borderRadius: radius.card,
               backgroundColor: t.card,
               borderWidth: 1,
@@ -334,7 +340,7 @@ export function Calendar() {
 
           <View
             style={{
-              padding: space.cardPad,
+              padding: cardPad,
               borderRadius: radius.card,
               backgroundColor: t.card,
               borderWidth: 1,
@@ -368,6 +374,7 @@ export function Calendar() {
             </View>
           </View>
         </View>
+        </Panes>
       </RiseIn>
     </View>
   );

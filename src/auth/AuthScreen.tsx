@@ -9,7 +9,7 @@ import { FONT, Txt } from '@/components/ui';
 import { useProfileStore } from '@/state/profile';
 import { AppleButton } from './AppleButton';
 import { Aurora } from './Aurora';
-import { accent, radius, size as metric, space, tracking, useTheme, type as typeScale } from '@/theme';
+import { accent, radius, scaleType, size as metric, space, tracking, useLayout, useTheme, type as typeScale } from '@/theme';
 
 const BRAND_STOPS = [
   { color: '#c4b5fd', to: 150 },
@@ -319,6 +319,7 @@ function Field({
   autoCapitalize = 'none',
 }: FieldProps) {
   const t = useTheme();
+  const { fontScale } = useLayout();
   const [focused, setFocused] = useState(false);
   return (
     <View style={{ marginBottom: 14 }}>
@@ -341,7 +342,7 @@ function Field({
           borderRadius: radius.cell,
           paddingHorizontal: 16,
           fontFamily: FONT.medium,
-          fontSize: 15,
+          fontSize: scaleType(15, fontScale),
           color: t.ink,
           backgroundColor: t.surface2,
           borderWidth: 1,

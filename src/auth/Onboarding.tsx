@@ -19,7 +19,7 @@ import { useAppStore } from '@/state/store';
 import { useProfileStore, type OnboardingAnswers } from '@/state/profile';
 import { Aurora } from './Aurora';
 import { GoalIcon, type GoalKey } from './GoalIcon';
-import { accent, CURVE, DURATION, POP_SPRING, radius, size as metric, space, tracking, useTheme, type as typeScale } from '@/theme';
+import { accent, CURVE, DURATION, POP_SPRING, radius, scaleType, size as metric, space, tracking, useLayout, useTheme, type as typeScale } from '@/theme';
 
 const GOALS: { key: GoalKey; label: string; blurb: string; color: string }[] = [
   { key: 'focus', label: 'Deep work', blurb: 'Longer, quieter blocks', color: accent.violetSoft },
@@ -61,6 +61,8 @@ const STEP_COUNT = 6;
 export function Onboarding() {
   const t = useTheme();
   const { width, height } = useWindowDimensions();
+  const { compact, fontScale } = useLayout();
+  const pad = compact ? 20 : 44;
   const profile = useProfileStore((s) => s.profile);
   const completeOnboarding = useProfileStore((s) => s.completeOnboarding);
   const applyOnboarding = useAppStore((s) => s.applyOnboarding);
@@ -155,7 +157,7 @@ export function Onboarding() {
         <Aurora width={width} height={height} showOrbits={false} />
       </View>
 
-      <View style={{ paddingHorizontal: 44, paddingTop: 34 }}>
+      <View style={{ paddingHorizontal: pad, paddingTop: compact ? 20 : 34 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
           <Touchable
             onPress={back}
@@ -200,8 +202,8 @@ export function Onboarding() {
       <ScrollView
         style={{ flex: 1 }}
         contentContainerStyle={{
-          paddingHorizontal: 44,
-          paddingTop: 30,
+          paddingHorizontal: pad,
+          paddingTop: compact ? 20 : 30,
           paddingBottom: 130,
           flexGrow: 1,
           justifyContent: step === 0 ? 'center' : 'flex-start',
@@ -220,11 +222,11 @@ export function Onboarding() {
               style={{
                 marginTop: 8,
                 maxWidth: 560,
-                height: 68,
+                height: compact ? 58 : 68,
                 borderRadius: 20,
                 paddingHorizontal: 22,
                 fontFamily: FONT.medium,
-                fontSize: 28,
+                fontSize: scaleType(28, fontScale),
                 letterSpacing: -0.6,
                 color: t.ink,
                 backgroundColor: t.surface2,
@@ -367,8 +369,8 @@ export function Onboarding() {
           left: 0,
           right: 0,
           bottom: 0,
-          paddingHorizontal: 44,
-          paddingBottom: 30,
+          paddingHorizontal: pad,
+          paddingBottom: compact ? 20 : 30,
           paddingTop: 18,
           flexDirection: 'row',
           alignItems: 'center',

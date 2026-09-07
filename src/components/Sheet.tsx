@@ -4,7 +4,7 @@ import { SmoothSheet } from 'insyd-bottom-sheet';
 import { Icon } from './Icon';
 import { Touchable } from './Touchable';
 import { PrimaryButton, Txt } from './ui';
-import { accent, radius, size as metric, space, type as typeScale, useTheme } from '@/theme';
+import { accent, radius, scaleType, size as metric, space, type as typeScale, useLayout, useTheme } from '@/theme';
 
 export interface SheetOption {
   label: string;
@@ -58,6 +58,8 @@ const CONTENT_MAX_WIDTH = 640;
  */
 export function SheetProvider({ children }: { children: React.ReactNode }) {
   const t = useTheme();
+  const { compact, fontScale } = useLayout();
+  const pad = compact ? 18 : space.sheetPad;
   const [spec, setSpec] = useState<SheetSpec | null>(null);
   const [values, setValues] = useState<Record<string, string>>({});
   /** Keys of required fields the user left blank on the last submit attempt. */
@@ -106,8 +108,8 @@ export function SheetProvider({ children }: { children: React.ReactNode }) {
               width: '100%',
               maxWidth: CONTENT_MAX_WIDTH,
               alignSelf: 'center',
-              paddingHorizontal: space.sheetPad,
-              paddingBottom: space.sheetPad,
+              paddingHorizontal: pad,
+              paddingBottom: pad,
             }}
           >
             <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
@@ -196,7 +198,7 @@ export function SheetProvider({ children }: { children: React.ReactNode }) {
                       multiline={f.kind === 'multiline'}
                       style={{
                         fontFamily: 'PlusJakartaSans_500Medium',
-                        fontSize: typeScale.control,
+                        fontSize: scaleType(typeScale.control, fontScale),
                         color: t.ink,
                         backgroundColor: t.surface2,
                         borderWidth: 1,

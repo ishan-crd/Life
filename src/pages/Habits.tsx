@@ -4,6 +4,7 @@ import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated'
 import { GrowBar } from '@/components/GrowBar';
 import { Icon } from '@/components/Icon';
 import { PageHeader } from '@/components/PageHeader';
+import { Panes } from '@/components/Panes';
 import { RiseIn } from '@/components/RiseIn';
 import { useSheet } from '@/components/Sheet';
 import { Touchable } from '@/components/Touchable';
@@ -12,7 +13,7 @@ import { isoDay } from '@/lib/date';
 import { useNow } from '@/lib/useNow';
 import { useAppStore } from '@/state/store';
 import type { Habit, Med } from '@/state/types';
-import { accent, CURVE, DURATION, radius, space, useTheme } from '@/theme';
+import { accent, CURVE, DURATION, radius, useLayout, useTheme } from '@/theme';
 
 const DAY_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
@@ -24,6 +25,7 @@ const TINT_OPTIONS = [
 
 export function Habits() {
   const t = useTheme();
+  const { compact, gutter, gap, cardPad, sideColumn } = useLayout();
   const now = useNow(60_000);
   const { openSheet } = useSheet();
 
@@ -44,6 +46,9 @@ export function Habits() {
   const stepGoal = useAppStore((s) => s.stepGoal);
   const sleepMinutes = useAppStore((s) => s.sleepMinutes);
   const sleepWeek = useAppStore((s) => s.sleepWeek);
+
+  const dotSize = compact ? 20 : 26;
+  const dotGap = compact ? 5 : 8;
 
   const today = isoDay(now);
   const habitDone = habits.filter((h) => h.days[today]).length;
@@ -95,7 +100,7 @@ export function Habits() {
   );
 
   return (
-    <View style={{ flex: 1, paddingHorizontal: space.gutter }}>
+    <View style={{ flex: 1, paddingHorizontal: gutter }}>
       <PageHeader
         title="Health"
         accent="& habits"
@@ -120,19 +125,18 @@ export function Habits() {
         delay={80}
         style={{
           flex: 1,
-          flexDirection: 'row',
-          gap: space.gap,
-          paddingBottom: 30,
           borderTopWidth: 1,
           borderTopColor: t.lineSoft,
-          paddingTop: 20,
+          paddingTop: compact ? 14 : 20,
         }}
       >
+        <Panes>
         <View
           style={{
-            flex: 1,
+            flex: compact ? undefined : 1,
             minWidth: 0,
-            padding: space.cardPad,
+            height: compact ? 380 : undefined,
+            padding: cardPad,
             borderRadius: radius.card,
             backgroundColor: t.card,
             borderWidth: 1,
@@ -155,13 +159,13 @@ export function Habits() {
                 Tap today&apos;s dot to log it
               </Txt>
             </View>
-            <View style={{ flexDirection: 'row', gap: 8, paddingRight: 8 }}>
+            <View style={{ flexDirection: 'row', gap: dotGap, paddingRight: 8 }}>
               {DAY_LETTERS.map((d, i) => (
                 <Txt
                   key={i}
                   size={12}
                   color={i === today ? t.ink : t.muted2}
-                  style={{ width: 26, textAlign: 'center' }}
+                  style={{ width: dotSize, textAlign: 'center' }}
                 >
                   {d}
                 </Txt>
@@ -174,6 +178,8 @@ export function Habits() {
                 key={hb.id}
                 habit={hb}
                 today={today}
+                dotSize={dotSize}
+                dotGap={dotGap}
                 onToggleDay={toggleHabitDay}
                 onEdit={openHabitSheet}
               />
@@ -183,8 +189,9 @@ export function Habits() {
 
         <View
           style={{
-            width: 372,
-            padding: space.cardPad,
+            width: compact ? '100%' : (sideColumn ?? 0) + 24,
+            height: compact ? 360 : undefined,
+            padding: cardPad,
             borderRadius: radius.card,
             backgroundColor: t.card,
             borderWidth: 1,
@@ -232,10 +239,10 @@ export function Habits() {
           </ScrollView>
         </View>
 
-        <View style={{ width: 274, gap: space.gap }}>
+        <View style={{ width: compact ? '100%' : 274, gap }}>
           <View
             style={{
-              padding: space.cardPad,
+              padding: cardPad,
               borderRadius: radius.card,
               backgroundColor: t.card,
               borderWidth: 1,
@@ -266,7 +273,7 @@ export function Habits() {
 
           <View
             style={{
-              padding: space.cardPad,
+              padding: cardPad,
               borderRadius: radius.card,
               backgroundColor: t.card,
               borderWidth: 1,
@@ -299,8 +306,8 @@ export function Habits() {
 
           <View
             style={{
-              flex: 1,
-              padding: space.cardPad,
+              flex: compact ? undefined : 1,
+              padding: cardPad,
               borderRadius: radius.card,
               backgroundColor: t.card,
               borderWidth: 1,
@@ -321,12 +328,23 @@ export function Habits() {
             </View>
           </View>
         </View>
+        </Panes>
       </RiseIn>
     </View>
   );
 }
 
-function DayDot({ on, isToday, onPress }: { on: boolean; isToday: boolean; onPress(): void }) {
+function DayDot({
+  on,
+  isToday,
+  size,
+  onPress,
+}: {
+  on: boolean;
+  isToday: boolean;
+  size: number;
+  onPress(): void;
+}) {
   const t = useTheme();
   const style = useAnimatedStyle(
     () => ({
@@ -341,8 +359,8 @@ function DayDot({ on, isToday, onPress }: { on: boolean; isToday: boolean; onPre
       <Animated.View
         style={[
           {
-            width: 26,
-            height: 26,
+            width: size,
+            height: size,
             borderRadius: radius.chip,
             borderWidth: 1,
           },
@@ -406,11 +424,15 @@ function Glass({ filled }: { filled: boolean }) {
 const HabitRow = React.memo(function HabitRow({
   habit,
   today,
+  dotSize,
+  dotGap,
   onToggleDay,
   onEdit,
 }: {
   habit: Habit;
   today: number;
+  dotSize: number;
+  dotGap: number;
   onToggleDay(id: string, dayIndex: number): void;
   onEdit(habit: Habit): void;
 }) {
@@ -450,12 +472,13 @@ const HabitRow = React.memo(function HabitRow({
           {habit.meta}
         </Txt>
       </Touchable>
-      <View style={{ flexDirection: 'row', gap: 8 }}>
+      <View style={{ flexDirection: 'row', gap: dotGap }}>
         {habit.days.map((v, i) => (
           <DayDot
             key={i}
             on={!!v}
             isToday={i === today}
+            size={dotSize}
             onPress={() => onToggleDay(habit.id, i)}
           />
         ))}

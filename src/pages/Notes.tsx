@@ -8,9 +8,7 @@ import { FONT, Pill, PrimaryButton, RoundButton, StatChip, Txt } from '@/compone
 import { useNow } from '@/lib/useNow';
 import { tagColor, useAppStore } from '@/state/store';
 import type { Note } from '@/state/types';
-import { radius, space, useTheme } from '@/theme';
-
-const COLUMNS = 4;
+import { radius, scaleType, useLayout, useTheme } from '@/theme';
 
 const TAG_OPTIONS = ['Idea', 'Work', 'Life', 'Health', 'Mind', 'Clipstake'].map((tag) => ({
   label: tag,
@@ -25,13 +23,13 @@ const SIZE_OPTIONS = [
 ];
 
 /** Greedy masonry: each note lands in the currently shortest column. */
-function layout(notes: Note[]): Note[][] {
-  const cols: Note[][] = Array.from({ length: COLUMNS }, () => []);
-  const heights = new Array(COLUMNS).fill(0);
+function layout(notes: Note[], columns: number): Note[][] {
+  const cols: Note[][] = Array.from({ length: columns }, () => []);
+  const heights = new Array(columns).fill(0);
   for (const note of notes) {
     const estimated = 96 + (note.text.length / 34) * note.size * 1.35;
     let target = 0;
-    for (let i = 1; i < COLUMNS; i += 1) if (heights[i] < heights[target]) target = i;
+    for (let i = 1; i < columns; i += 1) if (heights[i] < heights[target]) target = i;
     cols[target].push(note);
     heights[target] += estimated;
   }
@@ -40,6 +38,7 @@ function layout(notes: Note[]): Note[][] {
 
 export function Notes() {
   const t = useTheme();
+  const { gutter, gap, noteColumns } = useLayout();
   const { openSheet } = useSheet();
   const notes = useAppStore((s) => s.notes);
   const addNote = useAppStore((s) => s.addNote);
@@ -47,7 +46,7 @@ export function Notes() {
   const removeNote = useAppStore((s) => s.removeNote);
 
   const [editing, setEditing] = useState<string | null>(null);
-  const columns = useMemo(() => layout(notes), [notes]);
+  const columns = useMemo(() => layout(notes, noteColumns), [notes, noteColumns]);
   const now = useNow(30_000);
 
   const lastEdited = useMemo(() => {
@@ -91,7 +90,7 @@ export function Notes() {
   const stopEditing = useCallback(() => setEditing(null), []);
 
   return (
-    <View style={{ flex: 1, paddingHorizontal: space.gutter }}>
+    <View style={{ flex: 1, paddingHorizontal: gutter }}>
       <PageHeader
         title="Notes"
         accent="& scraps"
@@ -109,11 +108,11 @@ export function Notes() {
       >
         <ScrollView
           style={{ flex: 1 }}
-          contentContainerStyle={{ flexDirection: 'row', gap: space.gap, paddingBottom: 30 }}
+          contentContainerStyle={{ flexDirection: 'row', gap, paddingBottom: 30 }}
           showsVerticalScrollIndicator={false}
         >
           {columns.map((col, ci) => (
-            <View key={ci} style={{ flex: 1, gap: space.gap }}>
+            <View key={ci} style={{ flex: 1, gap }}>
               {col.map((note) => (
                 <NoteCard
                   key={note.id}
@@ -157,6 +156,9 @@ const NoteCard = React.memo(function NoteCard({
   onOptions(note: Note): void;
 }) {
   const t = useTheme();
+  const { cardPad, fontScale } = useLayout();
+  // The editor has to match the size the note renders at, scale included.
+  const px = scaleType(note.size, fontScale);
   // The editor is uncontrolled: typing touches a ref, never React state, so a
   // long note costs zero re-renders until it is committed.
   const draft = useRef(note.text);
@@ -169,7 +171,7 @@ const NoteCard = React.memo(function NoteCard({
   return (
     <View
       style={{
-        padding: space.cardPad,
+        padding: cardPad,
         borderRadius: radius.card,
         backgroundColor: t.card,
         borderWidth: 1,
@@ -225,9 +227,9 @@ const NoteCard = React.memo(function NoteCard({
             placeholderTextColor={t.muted3}
             style={{
               fontFamily: note.weight === '400' ? FONT.regular : FONT.medium,
-              fontSize: note.size,
-              lineHeight: note.size * 1.35,
-              letterSpacing: -0.01 * note.size,
+              fontSize: px,
+              lineHeight: px * 1.35,
+              letterSpacing: -0.01 * px,
               color: t.ink,
               backgroundColor: t.surface2,
               borderRadius: 10,

@@ -4,7 +4,7 @@ import { PAGE_TITLES, useAppStore } from '@/state/store';
 import { ConicDisc } from './ConicDisc';
 import { RoundButton, Txt } from './ui';
 import { Touchable } from './Touchable';
-import { accent, radius, size as metric, space, tracking, useTheme, type as typeScale } from '@/theme';
+import { accent, radius, size as metric, tracking, useLayout, useTheme, type as typeScale } from '@/theme';
 
 const BRAND_STOPS = [
   { color: '#c4b5fd', to: 150 },
@@ -19,7 +19,7 @@ interface HeaderProps {
   hasNotifications: boolean;
 }
 
-/** The 108px top bar: brand, page tabs, and the utility cluster. */
+/** The top bar: brand, page tabs, and the utility cluster. */
 export const Header = React.memo(function Header({
   onSearch,
   onNotifications,
@@ -27,6 +27,8 @@ export const Header = React.memo(function Header({
   hasNotifications,
 }: HeaderProps) {
   const t = useTheme();
+  const { compact, gutter, headerHeight } = useLayout();
+  const button = compact ? 38 : metric.headerButton;
   const page = useAppStore((s) => s.page);
   const setPage = useAppStore((s) => s.setPage);
   const light = useAppStore((s) => s.light);
@@ -37,23 +39,23 @@ export const Header = React.memo(function Header({
   return (
     <View
       style={{
-        height: metric.header,
-        paddingHorizontal: space.gutter,
+        height: headerHeight,
+        paddingHorizontal: gutter,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
       }}
     >
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, flex: 1 }}>
-        <View style={{ width: 38, height: 38, borderRadius: 19, overflow: 'hidden' }}>
-          <ConicDisc size={38} from={200} stops={BRAND_STOPS} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: compact ? 10 : 14, flex: 1 }}>
+        <View style={{ width: button - 8, height: button - 8, borderRadius: button, overflow: 'hidden' }}>
+          <ConicDisc size={button - 8} from={200} stops={BRAND_STOPS} />
         </View>
         <Txt size={typeScale.brand} weight="semibold" tracking={tracking.heading}>
           Life
         </Txt>
       </View>
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, display: compact ? 'none' : 'flex' }}>
         {PAGE_TITLES.map((label, i) => {
           const active = page === i;
           return (
@@ -77,11 +79,19 @@ export const Header = React.memo(function Header({
         })}
       </View>
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, justifyContent: 'flex-end' }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: compact ? 6 : 10,
+          flex: 1,
+          justifyContent: 'flex-end',
+        }}
+      >
         <RoundButton
           icon="search"
-          size={metric.headerButton}
-          iconSize={18}
+          size={button}
+          iconSize={compact ? 16 : 18}
           variant="chip"
           activeScale={0.92}
           accessibilityLabel="Search"
@@ -89,18 +99,18 @@ export const Header = React.memo(function Header({
         />
         <RoundButton
           icon={light ? 'moon' : 'sun'}
-          size={metric.headerButton}
-          iconSize={18}
+          size={button}
+          iconSize={compact ? 16 : 18}
           variant="chip"
           activeScale={0.92}
           activeRotate={-25}
           accessibilityLabel="Toggle light mode"
           onPress={toggleTheme}
         />
-        <View>
+        <View style={{ display: compact ? 'none' : 'flex' }}>
           <RoundButton
             icon="bell"
-            size={metric.headerButton}
+            size={button}
             iconSize={18}
             variant="chip"
             activeScale={0.92}
@@ -128,9 +138,9 @@ export const Header = React.memo(function Header({
           activeScale={0.92}
           accessibilityLabel="Profile"
           style={{
-            width: metric.headerButton,
-            height: metric.headerButton,
-            borderRadius: metric.headerButton / 2,
+            width: button,
+            height: button,
+            borderRadius: button / 2,
             overflow: 'hidden',
             borderWidth: 1,
             borderColor: t.pillLine,
@@ -139,7 +149,7 @@ export const Header = React.memo(function Header({
             backgroundColor: t.surface3,
           }}
         >
-          <ConicDisc size={metric.headerButton} from={20} stops={BRAND_STOPS} />
+          <ConicDisc size={button} from={20} stops={BRAND_STOPS} />
           <View style={{ position: 'absolute' }}>
             <Txt size={16} weight="semibold" color="#fff">
               A
