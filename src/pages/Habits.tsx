@@ -1,11 +1,495 @@
-import React from 'react';
-import { View } from 'react-native';
-import { Txt } from '@/components/ui';
+import React, { useCallback } from 'react';
+import { ScrollView, View } from 'react-native';
+import Animated, { useAnimatedStyle, withTiming } from 'react-native-reanimated';
+import { GrowBar } from '@/components/GrowBar';
+import { Icon } from '@/components/Icon';
+import { PageHeader } from '@/components/PageHeader';
+import { RiseIn } from '@/components/RiseIn';
+import { useSheet } from '@/components/Sheet';
+import { Touchable } from '@/components/Touchable';
+import { Meter, ProgressRing, RoundButton, StatChip, Txt } from '@/components/ui';
+import { isoDay } from '@/lib/date';
+import { useNow } from '@/lib/useNow';
+import { useAppStore } from '@/state/store';
+import type { Habit, Med } from '@/state/types';
+import { CURVE, DURATION } from '@/theme/motion';
+import { accent } from '@/theme/tokens';
+import { useTheme } from '@/theme/useTheme';
+
+const DAY_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+
+const TINT_OPTIONS = [
+  { label: 'Violet', value: 'rgba(139,92,246,0.18)', color: accent.violet },
+  { label: 'Lime', value: 'rgba(217,242,74,0.16)', color: accent.lime },
+  { label: 'Cyan', value: 'rgba(34,211,238,0.16)', color: accent.cyan },
+];
 
 export function Habits() {
+  const t = useTheme();
+  const now = useNow(60_000);
+  const { openSheet } = useSheet();
+
+  const habits = useAppStore((s) => s.habits);
+  const meds = useAppStore((s) => s.meds);
+  const toggleHabitDay = useAppStore((s) => s.toggleHabitDay);
+  const addHabit = useAppStore((s) => s.addHabit);
+  const updateHabit = useAppStore((s) => s.updateHabit);
+  const removeHabit = useAppStore((s) => s.removeHabit);
+  const toggleMed = useAppStore((s) => s.toggleMed);
+  const addMed = useAppStore((s) => s.addMed);
+  const updateMed = useAppStore((s) => s.updateMed);
+  const removeMed = useAppStore((s) => s.removeMed);
+  const water = useAppStore((s) => s.water);
+  const waterGoal = useAppStore((s) => s.waterGoal);
+  const addWater = useAppStore((s) => s.addWater);
+  const steps = useAppStore((s) => s.steps);
+  const stepGoal = useAppStore((s) => s.stepGoal);
+  const sleepMinutes = useAppStore((s) => s.sleepMinutes);
+  const sleepWeek = useAppStore((s) => s.sleepWeek);
+
+  const today = isoDay(now);
+  const habitDone = habits.filter((h) => h.days[today]).length;
+  const medsTaken = meds.filter((m) => m.taken).length;
+  const medsPct = meds.length ? medsTaken / meds.length : 0;
+  const stepPct = Math.min(100, Math.round((steps / stepGoal) * 100));
+
+  const openHabitSheet = useCallback(
+    (habit?: Habit) => {
+      openSheet({
+        title: habit ? 'Edit habit' : 'New habit',
+        submitLabel: habit ? 'Save' : 'Add habit',
+        fields: [
+          { key: 'name', label: 'Habit', placeholder: 'Read 20 pages', initial: habit?.name, required: true },
+          { key: 'meta', label: 'Detail', placeholder: 'Before bed', initial: habit?.meta },
+          { key: 'glyph', label: 'Glyph', placeholder: '📖', initial: habit?.glyph ?? '✨' },
+          { key: 'tint', label: 'Tint', kind: 'select', initial: habit?.tint, options: TINT_OPTIONS },
+        ],
+        onSubmit: (v) => {
+          const payload = { name: v.name, meta: v.meta, glyph: v.glyph || '✨', tint: v.tint };
+          if (habit) updateHabit(habit.id, payload);
+          else addHabit(payload);
+        },
+        onDelete: habit ? () => removeHabit(habit.id) : undefined,
+      });
+    },
+    [openSheet, addHabit, updateHabit, removeHabit]
+  );
+
+  const openMedSheet = useCallback(
+    (med?: Med) => {
+      openSheet({
+        title: med ? 'Edit pill' : 'New pill',
+        submitLabel: med ? 'Save' : 'Add',
+        fields: [
+          { key: 'name', label: 'Name', placeholder: 'Magnesium', initial: med?.name, required: true },
+          { key: 'dose', label: 'Dose', placeholder: '400 mg · before bed', initial: med?.dose },
+          { key: 'when', label: 'Time', placeholder: '22:30', initial: med?.when ?? '9:00', required: true },
+        ],
+        onSubmit: (v) => {
+          const payload = { name: v.name, dose: v.dose, when: v.when };
+          if (med) updateMed(med.id, payload);
+          else addMed(payload);
+        },
+        onDelete: med ? () => removeMed(med.id) : undefined,
+      });
+    },
+    [openSheet, addMed, updateMed, removeMed]
+  );
+
   return (
     <View style={{ flex: 1, paddingHorizontal: 26 }}>
-      <Txt size={44}>Habits</Txt>
+      <PageHeader
+        title="Health"
+        accent="& habits"
+        right={
+          <>
+            <StatChip
+              left={`${habitDone}/${habits.length} habits today`}
+              right={`${medsTaken}/${meds.length} pills taken`}
+            />
+            <RoundButton
+              icon="plus"
+              size={38}
+              iconSize={15}
+              accessibilityLabel="Add habit"
+              onPress={() => openHabitSheet()}
+            />
+          </>
+        }
+      />
+
+      <RiseIn
+        delay={80}
+        style={{
+          flex: 1,
+          flexDirection: 'row',
+          gap: 18,
+          paddingBottom: 30,
+          borderTopWidth: 1,
+          borderTopColor: t.lineSoft,
+          paddingTop: 20,
+        }}
+      >
+        <View
+          style={{
+            flex: 1,
+            minWidth: 0,
+            padding: 18,
+            borderRadius: 22,
+            backgroundColor: t.card,
+            borderWidth: 1,
+            borderColor: t.line,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: 14,
+            }}
+          >
+            <View>
+              <Txt size={17} weight="medium" tracking={-0.02}>
+                Habits
+              </Txt>
+              <Txt size={13} color={t.muted2} style={{ marginTop: 3 }}>
+                Tap today&apos;s dot to log it
+              </Txt>
+            </View>
+            <View style={{ flexDirection: 'row', gap: 8, paddingRight: 8 }}>
+              {DAY_LETTERS.map((d, i) => (
+                <Txt
+                  key={i}
+                  size={12}
+                  color={i === today ? t.ink : t.muted2}
+                  style={{ width: 26, textAlign: 'center' }}
+                >
+                  {d}
+                </Txt>
+              ))}
+            </View>
+          </View>
+          <ScrollView style={{ flex: 1, marginHorizontal: -8 }} showsVerticalScrollIndicator={false}>
+            {habits.map((hb) => (
+              <View
+                key={hb.id}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 14,
+                  paddingVertical: 12,
+                  paddingHorizontal: 8,
+                  borderRadius: 14,
+                }}
+              >
+                <Touchable
+                  onPress={() => openHabitSheet(hb)}
+                  activeScale={0.92}
+                  accessibilityLabel={`Edit ${hb.name}`}
+                  style={{
+                    width: 34,
+                    height: 34,
+                    borderRadius: 11,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    backgroundColor: hb.tint,
+                  }}
+                >
+                  <Txt size={15}>{hb.glyph}</Txt>
+                </Touchable>
+                <Touchable
+                  onPress={() => openHabitSheet(hb)}
+                  activeScale={0.995}
+                  haptic={false}
+                  style={{ flex: 1, minWidth: 0 }}
+                >
+                  <Txt size={14} weight="semibold" tracking={-0.01} numberOfLines={1}>
+                    {hb.name}
+                  </Txt>
+                  <Txt size={12} color={t.muted2} style={{ marginTop: 2 }} numberOfLines={1}>
+                    {hb.meta}
+                  </Txt>
+                </Touchable>
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  {hb.days.map((v, i) => (
+                    <DayDot
+                      key={i}
+                      on={!!v}
+                      isToday={i === today}
+                      onPress={() => toggleHabitDay(hb.id, i)}
+                    />
+                  ))}
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+
+        <View
+          style={{
+            width: 372,
+            padding: 18,
+            borderRadius: 22,
+            backgroundColor: t.card,
+            borderWidth: 1,
+            borderColor: t.line,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: 14,
+            }}
+          >
+            <View style={{ flex: 1 }}>
+              <Txt size={17} weight="medium" tracking={-0.02}>
+                Meds &amp; pills
+              </Txt>
+              <Txt size={13} color={t.muted2} style={{ marginTop: 3 }}>
+                {medsTaken}/{meds.length} pills taken · refill in 12 days
+              </Txt>
+            </View>
+            <ProgressRing progress={medsPct} color={accent.cyan} label={`${Math.round(medsPct * 100)}%`} />
+          </View>
+          <ScrollView style={{ flex: 1 }} contentContainerStyle={{ gap: 9 }} showsVerticalScrollIndicator={false}>
+            {meds.map((m) => (
+              <Touchable
+                key={m.id}
+                onPress={() => toggleMed(m.id)}
+                onLongPress={() => openMedSheet(m)}
+                activeScale={0.99}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 13,
+                  paddingVertical: 13,
+                  paddingHorizontal: 14,
+                  borderRadius: 16,
+                  backgroundColor: m.taken ? t.medTakenBg : t.medIdleBg,
+                  borderWidth: 1,
+                  borderColor: m.taken ? t.medTakenBorder : t.medIdleBorder,
+                }}
+              >
+                <RoundTick checked={m.taken} />
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Txt
+                    size={14}
+                    weight="semibold"
+                    tracking={-0.01}
+                    color={m.taken && t.name === 'light' ? '#4d4f57' : t.ink}
+                    style={[
+                      m.taken ? { textDecorationLine: 'line-through' } : null,
+                      m.taken && t.name === 'dark' ? { opacity: 0.55 } : null,
+                    ]}
+                    numberOfLines={1}
+                  >
+                    {m.name}
+                  </Txt>
+                  <Txt size={12} color={t.muted2} style={{ marginTop: 2 }} numberOfLines={1}>
+                    {m.dose}
+                  </Txt>
+                </View>
+                <View
+                  style={{
+                    paddingHorizontal: 10,
+                    paddingVertical: 5,
+                    borderRadius: 999,
+                    backgroundColor: t.pill,
+                    borderWidth: 1,
+                    borderColor: t.pillLine,
+                  }}
+                >
+                  <Txt size={12} weight="semibold" color={t.inkSoft}>
+                    {m.when}
+                  </Txt>
+                </View>
+              </Touchable>
+            ))}
+            <Touchable
+              onPress={() => openMedSheet()}
+              activeScale={0.98}
+              style={{
+                padding: 12,
+                borderRadius: 14,
+                borderWidth: 1,
+                borderStyle: 'dashed',
+                borderColor: t.btnLineDash,
+                alignItems: 'center',
+              }}
+            >
+              <Txt size={13} color={t.muted2}>
+                + Add pill
+              </Txt>
+            </Touchable>
+          </ScrollView>
+        </View>
+
+        <View style={{ width: 274, gap: 18 }}>
+          <View
+            style={{
+              padding: 18,
+              borderRadius: 22,
+              backgroundColor: t.card,
+              borderWidth: 1,
+              borderColor: t.line,
+            }}
+          >
+            <Txt size={13} color={t.muted2}>
+              Sleep last night
+            </Txt>
+            <Txt size={34} weight="semibold" tracking={-0.035} lineHeight={1.1} style={{ marginTop: 6 }}>
+              {Math.floor(sleepMinutes / 60)}h {sleepMinutes % 60}m
+            </Txt>
+            <View style={{ flexDirection: 'row', gap: 5, alignItems: 'flex-end', height: 40, marginTop: 14 }}>
+              {sleepWeek.map((v, i) => (
+                <View key={i} style={{ flex: 1, height: `${v}%` }}>
+                  <GrowBar
+                    delay={200 + i * 50}
+                    style={{
+                      flex: 1,
+                      borderRadius: 4,
+                      backgroundColor: i === sleepWeek.length - 1 ? accent.violet : t.sleepIdle,
+                    }}
+                  />
+                </View>
+              ))}
+            </View>
+          </View>
+
+          <View
+            style={{
+              padding: 18,
+              borderRadius: 22,
+              backgroundColor: t.card,
+              borderWidth: 1,
+              borderColor: t.line,
+            }}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Txt size={13} color={t.muted2}>
+                Water
+              </Txt>
+              <RoundButton
+                icon="plus"
+                size={28}
+                iconSize={13}
+                strokeWidth={2.4}
+                activeScale={0.88}
+                accessibilityLabel="Add a glass"
+                onPress={addWater}
+              />
+            </View>
+            <Txt size={26} weight="semibold" tracking={-0.03} style={{ marginTop: 6 }}>
+              {water} / {waterGoal} glasses
+            </Txt>
+            <View style={{ flexDirection: 'row', gap: 5, marginTop: 12 }}>
+              {Array.from({ length: waterGoal }, (_, i) => (
+                <Glass key={i} filled={i < water} />
+              ))}
+            </View>
+          </View>
+
+          <View
+            style={{
+              flex: 1,
+              padding: 18,
+              borderRadius: 22,
+              backgroundColor: t.card,
+              borderWidth: 1,
+              borderColor: t.line,
+            }}
+          >
+            <Txt size={13} color={t.muted2}>
+              Steps
+            </Txt>
+            <Txt size={26} weight="semibold" tracking={-0.03} style={{ marginTop: 6 }}>
+              {steps.toLocaleString()}
+            </Txt>
+            <Txt size={12} color={t.muted2} style={{ marginTop: 4 }}>
+              {stepPct}% of {Math.round(stepGoal / 1000)}k goal
+            </Txt>
+            <View style={{ marginTop: 12 }}>
+              <Meter pct={stepPct} color={accent.lime} />
+            </View>
+          </View>
+        </View>
+      </RiseIn>
     </View>
   );
+}
+
+function DayDot({ on, isToday, onPress }: { on: boolean; isToday: boolean; onPress(): void }) {
+  const t = useTheme();
+  const style = useAnimatedStyle(
+    () => ({
+      backgroundColor: withTiming(on ? accent.purple : 'transparent', { duration: DURATION.base }),
+      borderColor: withTiming(on ? accent.purple : t.btnLineSoft, { duration: DURATION.base }),
+      transform: [{ scale: withTiming(on ? 1.04 : 1, { duration: 400, easing: CURVE.pop }) }],
+    }),
+    [on, t.btnLineSoft]
+  );
+  return (
+    <Touchable onPress={onPress} activeScale={1.12} accessibilityRole="checkbox" accessibilityState={{ checked: on }}>
+      <Animated.View
+        style={[
+          {
+            width: 26,
+            height: 26,
+            borderRadius: 9,
+            borderWidth: 1,
+          },
+          isToday ? { borderStyle: 'solid' } : null,
+          style,
+        ]}
+      />
+    </Touchable>
+  );
+}
+
+function RoundTick({ checked }: { checked: boolean }) {
+  const t = useTheme();
+  const style = useAnimatedStyle(
+    () => ({
+      backgroundColor: withTiming(checked ? accent.cyan : 'transparent', { duration: DURATION.base }),
+      borderColor: withTiming(checked ? accent.cyan : t.btnLineSoft, { duration: DURATION.base }),
+      transform: [{ scale: withTiming(checked ? 1.05 : 1, { duration: 400, easing: CURVE.pop }) }],
+    }),
+    [checked, t.btnLineSoft]
+  );
+  const tick = useAnimatedStyle(
+    () => ({
+      opacity: withTiming(checked ? 1 : 0, { duration: DURATION.quick }),
+      transform: [{ scale: withTiming(checked ? 1 : 0.5, { duration: 400, easing: CURVE.pop }) }],
+    }),
+    [checked]
+  );
+  return (
+    <Animated.View
+      style={[
+        { width: 22, height: 22, borderRadius: 11, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+        style,
+      ]}
+    >
+      <Animated.View style={tick}>
+        <Icon name="check" size={12} color="#0a0a0c" strokeWidth={3.4} />
+      </Animated.View>
+    </Animated.View>
+  );
+}
+
+function Glass({ filled }: { filled: boolean }) {
+  const t = useTheme();
+  const style = useAnimatedStyle(
+    () => ({
+      backgroundColor: withTiming(filled ? accent.cyan : t.glassEmpty, {
+        duration: 400,
+        easing: CURVE.settle,
+      }),
+    }),
+    [filled, t.glassEmpty]
+  );
+  return <Animated.View style={[{ flex: 1, height: 26, borderRadius: 7 }, style]} />;
 }
