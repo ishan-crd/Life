@@ -1,18 +1,15 @@
-import React, { useEffect } from 'react';
-import type { StyleProp, ViewStyle } from 'react-native';
+import React, { forwardRef, useEffect } from 'react';
+import type { LayoutChangeEvent, StyleProp, View, ViewStyle } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withDelay, withTiming } from 'react-native-reanimated';
 import { CURVE, DURATION } from '@/theme/motion';
 
 /** `@keyframes riseIn` — the staggered 12px lift used across the overview. */
-export function RiseIn({
-  delay = 0,
-  style,
-  children,
-}: {
+export const RiseIn = forwardRef<View, {
   delay?: number;
   style?: StyleProp<ViewStyle>;
   children?: React.ReactNode;
-}) {
+  onLayout?: (e: LayoutChangeEvent) => void;
+}>(function RiseIn({ delay = 0, style, children, onLayout }, ref) {
   const progress = useSharedValue(0);
 
   useEffect(() => {
@@ -24,5 +21,9 @@ export function RiseIn({
     transform: [{ translateY: 12 * (1 - progress.value) }],
   }));
 
-  return <Animated.View style={[style, animated]}>{children}</Animated.View>;
-}
+  return (
+    <Animated.View ref={ref} onLayout={onLayout} style={[style, animated]}>
+      {children}
+    </Animated.View>
+  );
+});
