@@ -1,5 +1,5 @@
-import { addDays, isoDay, keyOf, startOfWeek } from '@/lib/date';
-import type { DailyLog, FocusLog, Habit, HabitLog } from './types';
+import { addDays, fmtDuration, isoDay, keyOf, startOfWeek } from '@/lib/date';
+import type { DailyLog, FocusLog, Habit, HabitLog, ProteinMap, WeekSplitRow } from './types';
 
 /**
  * Everything the dashboard reports is derived here from the dated logs, so no
@@ -136,4 +136,63 @@ export function consistencySeries(
 /** The last seven days of a one-number-a-day log, oldest first. */
 export function weekSeries(log: DailyLog, today: Date): number[] {
   return Array.from({ length: 7 }, (_, i) => log[keyOf(addDays(today, i - 6))] ?? 0);
+}
+
+/** Totals for the seven days starting at `monday`. */
+function weekTotals(
+  focusLog: FocusLog,
+  habitLog: HabitLog,
+  protein: ProteinMap,
+  monday: Date
+): { focus: number; habits: number; protein: number } {
+  let focus = 0;
+  let habits = 0;
+  let grams = 0;
+  for (let d = 0; d < 7; d += 1) {
+    const key = keyOf(addDays(monday, d));
+    focus += focusOn(focusLog, key);
+    habits += (habitLog[key] ?? []).length;
+    grams += (protein[key] ?? []).reduce((n, e) => n + e.grams, 0);
+  }
+  return { focus, habits, protein: grams };
+}
+
+/**
+ * Where the week went: this week's focus, habits and protein, each as a share
+ * of the best of the last four weeks. Measuring against your own recent best
+ * avoids inventing a target none of the logs know about.
+ */
+export function weekSplit(
+  focusLog: FocusLog,
+  habitLog: HabitLog,
+  protein: ProteinMap,
+  today: Date
+): WeekSplitRow[] {
+  const monday = startOfWeek(today);
+  const weeks = Array.from({ length: 4 }, (_, i) =>
+    weekTotals(focusLog, habitLog, protein, addDays(monday, -7 * i))
+  );
+  const current = weeks[0];
+  const share = (value: number, best: number) => (best > 0 ? Math.round((value / best) * 100) : 0);
+
+  return [
+    {
+      id: 'focus',
+      label: 'Deep work',
+      value: fmtDuration(current.focus),
+      pct: share(current.focus, Math.max(...weeks.map((w) => w.focus))),
+    },
+    {
+      id: 'habits',
+      label: 'Habits kept',
+      value: String(current.habits),
+      pct: share(current.habits, Math.max(...weeks.map((w) => w.habits))),
+    },
+    {
+      id: 'protein',
+      label: 'Protein',
+      value: `${current.protein} g`,
+      pct: share(current.protein, Math.max(...weeks.map((w) => w.protein))),
+    },
+  ];
 }

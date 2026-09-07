@@ -9,12 +9,20 @@ import { Touchable } from '@/components/Touchable';
 import { Meter, RoundButton, StatChip, Txt } from '@/components/ui';
 import { dateKey, daysInMonth, fmtLongDate, fmtMonth, monthLead, to12h } from '@/lib/date';
 import { useNow } from '@/lib/useNow';
+import { weekSplit } from '@/state/metrics';
 import { proteinTotal, useAppStore } from '@/state/store';
 import type { CalEvent } from '@/state/types';
 import { accent, radius, useLayout, useTheme } from '@/theme';
 
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const CELLS = 35;
+
+/** One colour per tracked domain in "Where the week goes". */
+const SPLIT_COLORS: Record<string, string> = {
+  focus: accent.purple,
+  habits: accent.lime,
+  protein: accent.cyan,
+};
 
 const COLOR_OPTIONS = [
   { label: 'Work', value: accent.lime, color: accent.lime },
@@ -34,9 +42,10 @@ export function Calendar() {
   const updateEvent = useAppStore((s) => s.updateEvent);
   const removeEvent = useAppStore((s) => s.removeEvent);
   const protein = useAppStore((s) => s.protein);
+  const focusLog = useAppStore((s) => s.focusLog);
   const selectedDate = useAppStore((s) => s.selectedDate);
   const selectDate = useAppStore((s) => s.selectDate);
-  const weekSplit = useAppStore((s) => s.weekSplit);
+  const habitLog = useAppStore((s) => s.habitLog);
 
   const [cursor, setCursor] = useState(() => new Date(now.getFullYear(), now.getMonth(), 1));
 
@@ -91,6 +100,12 @@ export function Calendar() {
         });
       }).length,
     [cells]
+  );
+
+  /** The three tracked domains, each against your best of the last four weeks. */
+  const week = useMemo(
+    () => weekSplit(focusLog, habitLog, protein, now),
+    [focusLog, habitLog, protein, now]
   );
 
   const selDate = useMemo(() => {
@@ -351,7 +366,7 @@ export function Calendar() {
               Where the week goes
             </Txt>
             <View style={{ gap: 12 }}>
-              {weekSplit.map((w) => (
+              {week.map((w) => (
                 <View key={w.id}>
                   <View
                     style={{
@@ -368,7 +383,7 @@ export function Calendar() {
                       {w.value}
                     </Txt>
                   </View>
-                  <Meter pct={w.pct} color={w.color} />
+                  <Meter pct={w.pct} color={SPLIT_COLORS[w.id]} />
                 </View>
               ))}
             </View>

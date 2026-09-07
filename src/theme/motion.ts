@@ -20,16 +20,6 @@ export const DURATION = {
   rise: 500,
 } as const;
 
-/** Spring used for page snapping — tuned to match the .62s settle transition. */
-export const PAGE_SPRING = {
-  damping: 22,
-  stiffness: 140,
-  mass: 0.9,
-  overshootClamping: false,
-  restDisplacementThreshold: 0.2,
-  restSpeedThreshold: 2,
-} as const;
-
 export const POP_SPRING = {
   damping: 14,
   stiffness: 260,

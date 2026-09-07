@@ -9,8 +9,7 @@
 
 /** Corner radii, from the largest surface down to the smallest chip. */
 export const radius = {
-  /** The dashboard shell and every top-level card. */
-  shell: 22,
+  /** Every top-level card. */
   card: 22,
   /** Sheets and onboarding surfaces sit slightly softer than cards. */
   sheet: 26,
@@ -56,9 +55,8 @@ export const type = {
   /** 46px counters ("4/6") and the 40px onboarding headings. */
   display: 46,
   heading: 40,
-  /** 34px / 30px stat readouts. */
+  /** 34px stat readouts. */
   stat: 34,
-  statSm: 26,
   /** The 24px brand wordmark. */
   brand: 24,
   /** 18px / 17px card titles. */
@@ -83,13 +81,13 @@ export const tracking = {
   display: -0.035,
   title: -0.03,
   heading: -0.02,
-  body: -0.01,
 } as const;
 
-/** Fixed component heights the design repeats. */
+/**
+ * Fixed component heights the design repeats. Anything that changes with the
+ * window — the header, the gutters, the grid — lives in `layout.ts` instead.
+ */
 export const size = {
-  /** The top bar. */
-  header: 108,
   /** Header utility buttons and the avatar. */
   headerButton: 46,
   /** Page-header action row (stat chip, primary button). */
@@ -108,8 +106,6 @@ export const size = {
 
 /** Stacking order for the few overlapping layers. */
 export const layer = {
-  page: 0,
-  overlay: 10,
   dragGhost: 70,
 } as const;
 

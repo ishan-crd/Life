@@ -14,7 +14,6 @@ import {
   seedMonthProtein,
   seedNotes,
   seedTasks,
-  seedWeekSplit,
 } from './seed';
 import type {
   BoardCard,
@@ -31,7 +30,6 @@ import type {
   ProteinEntry,
   ProteinMap,
   Task,
-  WeekSplitRow,
   WidgetKey,
 } from './types';
 import { accent } from '@/theme';
@@ -56,7 +54,6 @@ export interface AppState {
   notes: Note[];
   events: EventMap;
   protein: ProteinMap;
-  weekSplit: WeekSplitRow[];
 
   /**
    * Everything the dashboard charts is a dated log, keyed `YYYY-MM-DD` the way
@@ -197,7 +194,6 @@ const initial = {
   notes: seedNotes,
   events: {} as EventMap,
   protein: {} as ProteinMap,
-  weekSplit: seedWeekSplit,
   ...seedLogs(),
   waterGoal: 8,
   stepGoal: 10000,

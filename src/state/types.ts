@@ -105,10 +105,10 @@ export const WIDGET_KEYS = [
 
 export type WidgetKey = (typeof WIDGET_KEYS)[number];
 
+/** One row of "Where the week goes"; the page picks the colour by `id`. */
 export interface WeekSplitRow {
   id: string;
   label: string;
   value: string;
   pct: number;
-  color: string;
 }

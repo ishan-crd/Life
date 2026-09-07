@@ -12,7 +12,6 @@ import type {
   ProteinEntry,
   ProteinMap,
   Task,
-  WeekSplitRow,
 } from './types';
 import { accent, HABIT_TINTS } from '@/theme';
 
@@ -83,11 +82,6 @@ export const seedNotes: Note[] = [
   { id: 'n7', tag: 'Mind', dot: accent.cyan, when: 'Sun', text: 'Slow is smooth, smooth is fast.', size: 19, weight: '500', updatedAt: 0 },
 ];
 
-export const seedWeekSplit: WeekSplitRow[] = [
-  { id: 'w1', label: 'Deep work', value: '14 h', pct: 72, color: accent.purple },
-  { id: 'w2', label: 'Body & health', value: '5 h', pct: 38, color: accent.lime },
-  { id: 'w3', label: 'Life admin', value: '3 h', pct: 22, color: accent.cyan },
-];
 
 /**
  * The design keys its sample agenda off `day % 3`; we materialise the same
