@@ -103,6 +103,13 @@ export interface AppState {
   setWater(n: number): void;
   updateWeekSplit(id: string, patch: Partial<Omit<WeekSplitRow, 'id'>>): void;
 
+  applyOnboarding(input: {
+    rituals: string[];
+    waterGoal: number;
+    stepGoal: number;
+    focusHours: number;
+  }): void;
+
   resetAll(): void;
 }
 
@@ -293,6 +300,24 @@ export const useAppStore = create<AppState>()(
       setWater: (n) => set((s) => ({ water: Math.max(0, Math.min(s.waterGoal, n)) })),
       updateWeekSplit: (id, patch) =>
         set((s) => ({ weekSplit: s.weekSplit.map((w) => (w.id === id ? { ...w, ...patch } : w)) })),
+
+      /** Seeds the dashboard from the answers collected during onboarding. */
+      applyOnboarding: ({ rituals, waterGoal, stepGoal, focusHours }) =>
+        set((s) => ({
+          tasks: rituals.length
+            ? rituals.map((label, i) => ({
+                id: `onb_${i}`,
+                label,
+                meta: 'Every day',
+                done: false,
+              }))
+            : s.tasks,
+          waterGoal,
+          water: Math.min(s.water, waterGoal),
+          stepGoal,
+          focusTotal: Math.max(15, Math.min(90, Math.round((focusHours * 60) / 2))) * 60,
+          focusLeft: Math.max(15, Math.min(90, Math.round((focusHours * 60) / 2))) * 60,
+        })),
 
       resetAll: () => set({ ...initial, events: {} }),
     }),

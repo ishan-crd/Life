@@ -9,6 +9,7 @@ import { useSheet } from '@/components/Sheet';
 import { Touchable } from '@/components/Touchable';
 import { Card, GhostButton, Pill, RoundButton, Txt } from '@/components/ui';
 import { addDays, fmtShortDate, greetingFor, mmss, startOfWeek, to12h } from '@/lib/date';
+import { firstName, useProfileStore } from '@/state/profile';
 import { useAppStore } from '@/state/store';
 import { accent } from '@/theme/tokens';
 import { useTheme } from '@/theme/useTheme';
@@ -41,6 +42,7 @@ export function Overview() {
   const now = useNow(30_000);
   const { openSheet } = useSheet();
 
+  const profile = useProfileStore((s) => s.profile);
   const tasks = useAppStore((s) => s.tasks);
   const range = useAppStore((s) => s.range);
   const setRange = useAppStore((s) => s.setRange);
@@ -162,7 +164,7 @@ export function Overview() {
         <Txt size={44} weight="medium" tracking={-0.03} numberOfLines={1}>
           {greetingFor(now.getHours())},
           <Txt size={44} weight="medium" tracking={-0.03} color={t.inkDim}>
-            {' Arnav'}
+            {` ${firstName(profile)}`}
           </Txt>
         </Txt>
         <View

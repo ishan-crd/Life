@@ -20,6 +20,9 @@ import { Calendar } from '@/pages/Calendar';
 import { Habits } from '@/pages/Habits';
 import { Notes } from '@/pages/Notes';
 import { Overview } from '@/pages/Overview';
+import { AuthScreen } from '@/auth/AuthScreen';
+import { Onboarding } from '@/auth/Onboarding';
+import { useProfileStore } from '@/state/profile';
 import { PAGE_TITLES, useAppStore } from '@/state/store';
 import { useTheme } from '@/theme/useTheme';
 
@@ -62,15 +65,45 @@ function useFocusTicker() {
   }, [running, tick]);
 }
 
-function Dashboard() {
+/** The rounded 22px canvas every screen lives inside. */
+function Shell({ children }: { children: (shellWidth: number) => React.ReactNode }) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
+  const shellWidth = Math.max(320, width - insets.left - insets.right - 24);
+
+  return (
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: t.backdrop,
+        paddingTop: insets.top,
+        paddingBottom: insets.bottom,
+        paddingLeft: insets.left,
+        paddingRight: insets.right,
+        alignItems: 'center',
+      }}
+    >
+      <View
+        style={{
+          flex: 1,
+          width: shellWidth,
+          marginVertical: 12,
+          borderRadius: 22,
+          overflow: 'hidden',
+          backgroundColor: t.bg,
+        }}
+      >
+        {children(shellWidth)}
+      </View>
+    </View>
+  );
+}
+
+function Dashboard() {
   const { openSheet } = useSheet();
   useFocusTicker();
   useHashRoute();
-
-  const shellWidth = Math.max(320, width - insets.left - insets.right - 24);
 
   const onSearch = useCallback(() => {
     openSheet({
@@ -95,42 +128,37 @@ function Dashboard() {
     });
   }, [openSheet]);
 
+  const openProfile = useCallback(() => {
+    const profile = useProfileStore.getState().profile;
+    openSheet({
+      title: profile?.name ? `Hey, ${profile.name}` : 'Your account',
+      subtitle: profile?.email ?? 'Signed in on this device',
+      submitLabel: 'Save name',
+      fields: [{ key: 'name', label: 'Display name', initial: profile?.name ?? '', required: true }],
+      onSubmit: (v) => useProfileStore.getState().setName(v.name.trim()),
+      onDelete: () => useProfileStore.getState().signOut(),
+    });
+  }, [openSheet]);
+
   const noop = useCallback(() => {}, []);
 
   return (
-    <View
-      style={{
-        flex: 1,
-        backgroundColor: t.backdrop,
-        paddingTop: insets.top,
-        paddingBottom: insets.bottom,
-        paddingLeft: insets.left,
-        paddingRight: insets.right,
-        alignItems: 'center',
-      }}
-    >
-      <View
-        style={{
-          flex: 1,
-          width: shellWidth,
-          marginVertical: 12,
-          borderRadius: 22,
-          overflow: 'hidden',
-          backgroundColor: t.bg,
-        }}
-      >
-        <Header onSearch={onSearch} onNotifications={noop} onProfile={noop} hasNotifications />
-        <View style={{ flex: 1 }}>
-          <Pager width={shellWidth} overlay={<PageDots />}>
-            <Overview />
-            <Board />
-            <Calendar />
-            <Habits />
-            <Notes />
-          </Pager>
-        </View>
-      </View>
-    </View>
+    <Shell>
+      {(shellWidth) => (
+        <>
+          <Header onSearch={onSearch} onNotifications={noop} onProfile={openProfile} hasNotifications />
+          <View style={{ flex: 1 }}>
+            <Pager width={shellWidth} overlay={<PageDots />}>
+              <Overview />
+              <Board />
+              <Calendar />
+              <Habits />
+              <Notes />
+            </Pager>
+          </View>
+        </>
+      )}
+    </Shell>
   );
 }
 
@@ -138,6 +166,9 @@ function Root() {
   const t = useTheme();
   useLandscapeLock();
   const hydrated = useAppStore((s) => s.hydrated);
+  const profileHydrated = useProfileStore((s) => s.hydrated);
+  const profile = useProfileStore((s) => s.profile);
+  const onboarded = useProfileStore((s) => s.onboarded);
   const [fontsLoaded] = useFonts({
     PlusJakartaSans_400Regular,
     PlusJakartaSans_500Medium,
@@ -145,7 +176,7 @@ function Root() {
     PlusJakartaSans_700Bold,
   });
 
-  const ready = fontsLoaded && hydrated;
+  const ready = fontsLoaded && hydrated && profileHydrated;
 
   useEffect(() => {
     if (ready) SplashScreen.hideAsync().catch(() => undefined);
@@ -155,7 +186,13 @@ function Root() {
 
   return (
     <SheetProvider>
-      <Dashboard />
+      {!profile ? (
+        <Shell>{() => <AuthScreen />}</Shell>
+      ) : !onboarded ? (
+        <Shell>{() => <Onboarding />}</Shell>
+      ) : (
+        <Dashboard />
+      )}
     </SheetProvider>
   );
 }

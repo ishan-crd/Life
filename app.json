@@ -19,6 +19,7 @@
       "supportsTablet": true,
       "requireFullScreen": false,
       "bundleIdentifier": "com.ishangupta.life",
+      "usesAppleSignIn": true,
       "infoPlist": {
         "UISupportedInterfaceOrientations~ipad": [
           "UIInterfaceOrientationLandscapeLeft",
@@ -43,6 +44,7 @@
       "bundler": "metro"
     },
     "plugins": [
+      "expo-apple-authentication",
       "expo-font",
       ["expo-splash-screen", { "backgroundColor": "#050506", "image": "./assets/splash-icon.png", "imageWidth": 180 }]
     ],
