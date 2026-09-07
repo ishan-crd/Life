@@ -86,6 +86,25 @@ export type HabitLog = Record<string, string[]>;
 /** One number a day: glasses drunk, steps walked, minutes asleep. */
 export type DailyLog = Record<string, number>;
 
+/** The widgets the home page can show, in the order the picker lists them. */
+export const WIDGET_KEYS = [
+  'plan',
+  'deepwork',
+  'consistency',
+  'heatmap',
+  'agenda',
+  'habits',
+  'protein',
+  'water',
+  'steps',
+  'sleep',
+  'board',
+  'notes',
+  'streak',
+] as const;
+
+export type WidgetKey = (typeof WIDGET_KEYS)[number];
+
 export interface WeekSplitRow {
   id: string;
   label: string;

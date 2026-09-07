@@ -32,6 +32,7 @@ import type {
   ProteinMap,
   Task,
   WeekSplitRow,
+  WidgetKey,
 } from './types';
 import { accent } from '@/theme';
 
@@ -73,6 +74,9 @@ export interface AppState {
   proteinGoal: number;
 
   selectedDate: string | null;
+
+  /** The home page's widgets, in the order they are laid out. */
+  widgets: WidgetKey[];
 
   toggleTheme(): void;
   setPage(page: number): void;
@@ -130,8 +134,25 @@ export interface AppState {
     focusHours: number;
   }): void;
 
+  setWidgets(widgets: WidgetKey[]): void;
+  addWidget(key: WidgetKey): void;
+  removeWidget(key: WidgetKey): void;
+  resetWidgets(): void;
+
   resetAll(): void;
 }
+
+/**
+ * The home page as the design drew it: the plan and the deep-work chart on one
+ * row, then consistency, the focus heatmap and today's agenda.
+ */
+export const DEFAULT_WIDGETS: WidgetKey[] = [
+  'plan',
+  'deepwork',
+  'consistency',
+  'heatmap',
+  'agenda',
+];
 
 const NOTE_TAGS: Record<string, string> = {
   Idea: accent.violet,
@@ -182,6 +203,7 @@ const initial = {
   stepGoal: 10000,
   proteinGoal: 150,
   selectedDate: null,
+  widgets: DEFAULT_WIDGETS,
 };
 
 export const useAppStore = create<AppState>()(
@@ -392,6 +414,12 @@ export const useAppStore = create<AppState>()(
         })),
 
       /** Wipes the dashboard back to its seed — used when an account signs out. */
+      setWidgets: (widgets) => set({ widgets }),
+      addWidget: (key) =>
+        set((s) => (s.widgets.includes(key) ? {} : { widgets: [...s.widgets, key] })),
+      removeWidget: (key) => set((s) => ({ widgets: s.widgets.filter((w) => w !== key) })),
+      resetWidgets: () => set({ widgets: DEFAULT_WIDGETS }),
+
       /** Wipes the dashboard back to a fresh account, history included. */
       resetAll: () => set({ ...initial, ...seedLogs(), events: {}, protein: {} }),
     }),
