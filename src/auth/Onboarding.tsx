@@ -208,6 +208,11 @@ export function Onboarding() {
           flexGrow: 1,
           justifyContent: step === 0 ? 'center' : 'flex-start',
         }}
+        // The name field can sit under the keyboard on a landscape phone; iOS
+        // insets the scroll by the overlap and keeps the field above it.
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
+        automaticallyAdjustKeyboardInsets
         showsVerticalScrollIndicator={false}
       >
         {step === 0 ? (
@@ -219,6 +224,12 @@ export function Onboarding() {
               placeholderTextColor={t.muted3}
               autoCapitalize="words"
               autoCorrect={false}
+              textContentType="givenName"
+              autoComplete="given-name"
+              // Return is the Continue button, which the keyboard covers.
+              returnKeyType="next"
+              enablesReturnKeyAutomatically
+              onSubmitEditing={next}
               style={{
                 marginTop: 8,
                 maxWidth: 560,
