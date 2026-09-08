@@ -145,6 +145,10 @@ npm run web
 | --- | --- |
 | <img src="docs/notes.png" width="420" /> | <img src="docs/light-board.png" width="420" /> |
 
+| Arranging the home page | On a phone |
+| --- | --- |
+| <img src="docs/editing.png" width="420" /> | <img src="docs/phone.png" width="200" /> |
+
 ## Building for a device
 
 ```bash
