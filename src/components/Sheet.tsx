@@ -46,8 +46,12 @@ export function useSheet(): SheetContextValue {
   return ctx;
 }
 
-/** Landscape iPad is far wider than a form should be — cap the content column. */
-const CONTENT_MAX_WIDTH = 640;
+/**
+ * Landscape iPad is far wider than a form should be. The sheet itself is
+ * capped, so on a wide window it floats centered at this width rather than
+ * spanning the screen with the form marooned in the middle of it.
+ */
+const SHEET_MAX_WIDTH = 640;
 
 /**
  * Single reusable editor sheet — every create/edit affordance in the app
@@ -101,17 +105,10 @@ export function SheetProvider({ children }: { children: React.ReactNode }) {
         borderRadius={radius.sheet}
         handleColor={t.btnLine}
         backdropColor={t.scrim}
+        maxWidth={SHEET_MAX_WIDTH}
       >
         {spec ? (
-          <View
-            style={{
-              width: '100%',
-              maxWidth: CONTENT_MAX_WIDTH,
-              alignSelf: 'center',
-              paddingHorizontal: pad,
-              paddingBottom: pad,
-            }}
-          >
+          <View style={{ paddingHorizontal: pad, paddingBottom: pad }}>
             <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
               <View style={{ flex: 1 }}>
                 <Txt size={22} weight="semibold" tracking={-0.02}>
