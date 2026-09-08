@@ -389,9 +389,7 @@ function WidgetCell({
             width: slot.w,
             height: slot.h,
             borderRadius: radius.card,
-            shadowColor: '#000',
-            shadowRadius: 28,
-            shadowOffset: { width: 0, height: 18 },
+            ...elevation.widgetLift,
           },
           animated,
         ]}

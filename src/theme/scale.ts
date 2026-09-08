@@ -125,4 +125,10 @@ export const elevation = {
     shadowOffset: { width: 0, height: 24 },
     elevation: 24,
   },
+  /** A widget lifted off the home page mid-drag. Opacity is animated in. */
+  widgetLift: {
+    shadowColor: '#000',
+    shadowRadius: 28,
+    shadowOffset: { width: 0, height: 18 },
+  },
 } as const;
