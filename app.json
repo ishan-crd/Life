@@ -8,23 +8,30 @@
     "scheme": "life",
     "userInterfaceStyle": "automatic",
     "backgroundColor": "#050506",
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
       "requireFullScreen": false,
-      "bundleIdentifier": "com.ishangupta.life",
+      "bundleIdentifier": "app.insyd.life",
       "usesAppleSignIn": true,
       "infoPlist": {
         "UISupportedInterfaceOrientations~ipad": [
           "UIInterfaceOrientationLandscapeLeft",
           "UIInterfaceOrientationLandscapeRight",
           "UIInterfaceOrientationPortrait",
+          "UIInterfaceOrientationPortraitUpsideDown",
+          "UIInterfaceOrientationLandscapeLeft",
+          "UIInterfaceOrientationLandscapeRight",
+          "UIInterfaceOrientationPortrait",
           "UIInterfaceOrientationPortraitUpsideDown"
-        ]
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "package": "com.ishangupta.life",
+      "package": "app.insyd.life",
       "adaptiveIcon": {
         "backgroundColor": "#050506",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -40,8 +47,22 @@
     "plugins": [
       "expo-apple-authentication",
       "expo-font",
-      ["expo-splash-screen", { "backgroundColor": "#050506", "image": "./assets/splash-icon.png", "imageWidth": 180 }]
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#050506",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 180
+        }
+      ]
     ],
-    "experiments": { "typedRoutes": false }
+    "experiments": {
+      "typedRoutes": false
+    },
+    "extra": {
+      "eas": {
+        "projectId": "64f39612-0e13-489a-8bbd-2d8bd63c7491"
+      }
+    }
   }
 }
