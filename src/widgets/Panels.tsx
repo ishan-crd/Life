@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ConsistencyChart } from '@/components/ConsistencyChart';
@@ -127,6 +127,9 @@ export function DeepWorkWidget() {
   const t = useTheme();
   const { compact } = useLayout();
   const now = useNow(60_000);
+  /** The habits group is dropped in a one-column slot, where three groups collide. */
+  const [width, setWidth] = useState(0);
+  const roomy = width >= 440;
 
   const range = useAppStore((s) => s.range);
   const tasks = useAppStore((s) => s.tasks);
@@ -197,7 +200,7 @@ export function DeepWorkWidget() {
 
   return (
     <WidgetCard title={`${fmtDuration(total)} logged`} icon="clock">
-      <View style={{ flex: 1, justifyContent: 'space-between' }}>
+      <View style={{ flex: 1, justifyContent: 'space-between' }} onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
           <Txt size={13} color={t.muted2}>
             {fmtDuration(previous)} the period before
@@ -206,8 +209,8 @@ export function DeepWorkWidget() {
         </View>
 
         <View style={{ flexDirection: 'row', gap: compact ? 10 : 16, alignItems: 'stretch', flex: 1, minHeight: 0, paddingTop: 10 }}>
-          <View style={{ flex: 1.02, alignSelf: 'stretch', paddingRight: compact ? 8 : 16 }}>
-            <Txt size={13} style={{ marginBottom: 10 }}>
+          <View style={{ flex: roomy ? 1.02 : 0.7, alignSelf: 'stretch', paddingRight: compact ? 8 : 16 }}>
+            <Txt size={13} style={{ marginBottom: 10 }} numberOfLines={1}>
               <Txt size={13} weight="semibold">
                 {ritualPct}%
               </Txt>
@@ -227,8 +230,8 @@ export function DeepWorkWidget() {
             </View>
           </View>
 
-          <View style={{ flex: 1, alignSelf: 'stretch', paddingRight: compact ? 8 : 16 }}>
-            <Txt size={13} style={{ marginBottom: 10 }}>
+          <View style={{ flex: 1, alignSelf: 'stretch', paddingRight: roomy ? (compact ? 8 : 16) : 0 }}>
+            <Txt size={13} style={{ marginBottom: 10 }} numberOfLines={1}>
               <Txt size={13} weight="semibold">
                 {fmtDuration(total)}
               </Txt>
@@ -239,6 +242,7 @@ export function DeepWorkWidget() {
             <BarGroup bars={bars} />
           </View>
 
+          {roomy ? (
           <View style={{ flex: 0.42, alignSelf: 'stretch' }}>
             <Txt size={13} style={{ marginBottom: 10 }}>
               <Txt size={13} weight="semibold">
@@ -250,6 +254,7 @@ export function DeepWorkWidget() {
             </Txt>
             <BarGroup bars={habitBars} color={t.barMuted} />
           </View>
+          ) : null}
         </View>
 
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingTop: 8 }}>

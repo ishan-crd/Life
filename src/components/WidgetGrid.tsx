@@ -102,17 +102,16 @@ export function packWidgets(
   };
 }
 
-/**
- * A row can be as short as this before the page scrolls instead of squeezing,
- * and no taller than this however much room there is.
- */
-const MIN_ROW = 78;
+/** No row grows taller than this however much room there is. */
 const MAX_ROW = 168;
 
-/** The row height that makes `rowUnits` rows and their gaps fill `available`. */
-export function fitRowHeight(available: number, rowUnits: number, gapTotal: number): number {
-  if (rowUnits <= 0) return MIN_ROW;
-  return Math.max(MIN_ROW, Math.min(MAX_ROW, (available - gapTotal) / rowUnits));
+/**
+ * The row height that makes `rowUnits` rows and their gaps fill `available`,
+ * no shorter than `floor` — below that the page scrolls instead of squeezing.
+ */
+export function fitRowHeight(available: number, rowUnits: number, gapTotal: number, floor: number): number {
+  if (rowUnits <= 0) return floor;
+  return Math.max(floor, Math.min(MAX_ROW, (available - gapTotal) / rowUnits));
 }
 
 /** Moves one entry, the way a dragged widget pushes the others along. */
@@ -158,7 +157,7 @@ export function WidgetGrid({
   onReorder,
   onRemove,
 }: WidgetGridProps) {
-  const { columns, gap, rowHeight } = useLayout();
+  const { columns, gap, rowHeight, minRowHeight } = useLayout();
   const [width, setWidth] = useState(0);
   /** The order as the finger sees it — committed to the store on drop. */
   const [live, setLive] = useState(order);
@@ -179,9 +178,9 @@ export function WidgetGrid({
     if (!fillHeight || !base.rowUnits) return base;
     // Pack once to learn how many rows the page is, then again at the height
     // that makes those rows fill the space.
-    const fitted = fitRowHeight(fillHeight, base.rowUnits, base.gapTotal);
+    const fitted = fitRowHeight(fillHeight, base.rowUnits, base.gapTotal, minRowHeight);
     return packWidgets(live, sizeOf, columns, colWidth, fitted, gap);
-  }, [live, sizeOf, columns, colWidth, rowHeight, gap, fillHeight]);
+  }, [live, sizeOf, columns, colWidth, rowHeight, minRowHeight, gap, fillHeight]);
 
   /** Slot rectangles on the UI thread, so the hit test never crosses to JS. */
   const slotsSV = useSharedValue<Slot[]>([]);

@@ -38,7 +38,8 @@ export function Overview() {
   const [viewport, setViewport] = useState(0);
 
   const padTop = compact ? 14 : 20;
-  const padBottom = 30;
+  // Enough at the end for the last widget to clear the page dots on a phone.
+  const padBottom = compact ? 52 : 30;
 
   const startEditing = useCallback(() => setEditing(true), []);
   const stopEditing = useCallback(() => setEditing(false), []);
@@ -198,11 +199,6 @@ export function Overview() {
             onReorder={setWidgets}
             onRemove={removeWidget}
           />
-          {editing ? (
-            <Txt size={12} color={t.muted3} style={{ textAlign: 'center', paddingTop: 16 }}>
-              Drag a widget to move it · − removes it · + adds one
-            </Txt>
-          ) : null}
         </ScrollView>
       </RiseIn>
     </View>

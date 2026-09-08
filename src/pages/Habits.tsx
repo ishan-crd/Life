@@ -20,7 +20,13 @@ const DAY_LETTERS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
 export function Habits() {
   const t = useTheme();
-  const { compact, gutter, gap, cardPad, sideColumn } = useLayout();
+  const { bp, compact, width, gutter, gap, cardPad, sideColumn } = useLayout();
+  /**
+   * Three panes across need a wide landscape tablet. Below that the habit list
+   * and the pills share a row with the three tiles beneath them, and a phone
+   * stacks the lot.
+   */
+  const mode = compact ? 'stack' : width < 1240 ? 'rows' : 'columns';
   const now = useNow(60_000);
   const { openSheet } = useSheet();
 
@@ -45,8 +51,10 @@ export function Habits() {
   const setSleep = useAppStore((s) => s.setSleep);
 
   const weekStart = useMemo(() => startOfWeek(now), [now]);
-  const dotSize = compact ? 20 : 26;
-  const dotGap = compact ? 5 : 8;
+  // The week of dots is the widest thing on a row; it gives up a little on
+  // anything short of a wide tablet so the habit's name keeps room to read.
+  const dotSize = compact ? 20 : bp === 'medium' ? 22 : 26;
+  const dotGap = compact ? 5 : bp === 'medium' ? 6 : 8;
 
   const today = isoDay(now);
   const todayKey = keyOf(now);
@@ -129,38 +137,7 @@ export function Habits() {
     });
   }, [openSheet, setSleep, sleepMinutes, todayKey]);
 
-  return (
-    <View style={{ flex: 1, paddingHorizontal: gutter }}>
-      <PageHeader
-        title="Health"
-        accent="& habits"
-        right={
-          <>
-            <StatChip
-              left={`${habitDone}/${habits.length} habits today`}
-              right={`${medsTaken}/${meds.length} pills taken`}
-            />
-            <RoundButton
-              icon="plus"
-              size={38}
-              iconSize={15}
-              accessibilityLabel="Add habit"
-              onPress={() => openHabitSheet()}
-            />
-          </>
-        }
-      />
-
-      <RiseIn
-        delay={80}
-        style={{
-          flex: 1,
-          borderTopWidth: 1,
-          borderTopColor: t.lineSoft,
-          paddingTop: compact ? 14 : 20,
-        }}
-      >
-        <Panes>
+  const habitsPane = (
         <View
           style={{
             flex: compact ? undefined : 1,
@@ -218,7 +195,9 @@ export function Habits() {
             ))}
           </ScrollView>
         </View>
+  );
 
+  const medsPane = (
         <View
           style={{
             width: compact ? '100%' : (sideColumn ?? 0) + 24,
@@ -270,10 +249,21 @@ export function Habits() {
             </Touchable>
           </ScrollView>
         </View>
+  );
 
-        <View style={{ width: compact ? '100%' : 274, gap }}>
+  const tilesPane = (
+        <View
+          style={
+            mode === 'columns'
+              ? { width: 274, gap }
+              : mode === 'rows'
+                ? { flexDirection: 'row', gap }
+                : { gap }
+          }
+        >
           <View
             style={{
+              flex: mode === 'rows' ? 1 : undefined,
               padding: cardPad,
               borderRadius: radius.card,
               backgroundColor: t.card,
@@ -316,6 +306,7 @@ export function Habits() {
 
           <View
             style={{
+              flex: mode === 'rows' ? 1 : undefined,
               padding: cardPad,
               borderRadius: radius.card,
               backgroundColor: t.card,
@@ -382,7 +373,61 @@ export function Habits() {
             </View>
           </View>
         </View>
-        </Panes>
+  );
+
+  return (
+    <View style={{ flex: 1, paddingHorizontal: gutter }}>
+      <PageHeader
+        title="Health"
+        accent="& habits"
+        right={
+          <>
+            <StatChip
+              left={`${habitDone}/${habits.length} habits today`}
+              right={`${medsTaken}/${meds.length} pills taken`}
+            />
+            <RoundButton
+              icon="plus"
+              size={38}
+              iconSize={15}
+              accessibilityLabel="Add habit"
+              onPress={() => openHabitSheet()}
+            />
+          </>
+        }
+      />
+
+      <RiseIn
+        delay={80}
+        style={{
+          flex: 1,
+          borderTopWidth: 1,
+          borderTopColor: t.lineSoft,
+          paddingTop: compact ? 14 : 20,
+        }}
+      >
+        {/* The three panes only sit side by side on a wide landscape tablet. */}
+        {mode === 'stack' ? (
+          <Panes>
+            {habitsPane}
+            {medsPane}
+            {tilesPane}
+          </Panes>
+        ) : mode === 'rows' ? (
+          <View style={{ flex: 1, gap, paddingBottom: 30 }}>
+            <View style={{ flex: 1, flexDirection: 'row', gap }}>
+              {habitsPane}
+              {medsPane}
+            </View>
+            {tilesPane}
+          </View>
+        ) : (
+          <View style={{ flex: 1, flexDirection: 'row', gap, paddingBottom: 30 }}>
+            {habitsPane}
+            {medsPane}
+            {tilesPane}
+          </View>
+        )}
       </RiseIn>
     </View>
   );

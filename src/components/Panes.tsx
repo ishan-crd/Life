@@ -9,21 +9,25 @@ import { useLayout } from '@/theme';
  */
 export function Panes({
   children,
+  stack,
   onScroll,
 }: {
   children: React.ReactNode;
+  /** Stack even off a phone — a page whose side pane needs more than a portrait tablet has. */
+  stack?: boolean;
   /** Called while the stacked layout scrolls, for pages that measure hit-boxes. */
   onScroll?: () => void;
 }) {
   const { compact, gap } = useLayout();
 
-  if (!compact) {
+  if (!(stack ?? compact)) {
     return <View style={{ flex: 1, flexDirection: 'row', gap, paddingBottom: 30 }}>{children}</View>;
   }
   return (
     <ScrollView
       style={{ flex: 1 }}
-      contentContainerStyle={{ gap, paddingBottom: 30 }}
+      // Enough at the end for the last card to clear the page dots.
+      contentContainerStyle={{ gap, paddingBottom: 52 }}
       showsVerticalScrollIndicator={false}
       onScroll={onScroll}
       scrollEventThrottle={32}

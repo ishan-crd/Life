@@ -17,7 +17,7 @@ export function PageHeader({
   right?: React.ReactNode;
 }) {
   const t = useTheme();
-  const { compact } = useLayout();
+  const { compact, narrow } = useLayout();
   return (
     <View
       style={{
@@ -31,7 +31,15 @@ export function PageHeader({
         paddingBottom: compact ? 16 : 22,
       }}
     >
-      <Txt size={typeScale.pageTitle} weight="medium" tracking={tracking.title} numberOfLines={1}>
+      <Txt
+        size={typeScale.pageTitle}
+        weight="medium"
+        tracking={tracking.title}
+        // "Calendar September 2026" is wider than a narrow window; let it wrap
+        // there rather than lose the year to an ellipsis.
+        numberOfLines={narrow ? 2 : 1}
+        style={{ flexShrink: 1 }}
+      >
         {title}
         {accentText ? (
           <Txt

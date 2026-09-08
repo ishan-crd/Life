@@ -32,8 +32,10 @@ export const Header = React.memo(function Header({
   hasNotifications,
 }: HeaderProps) {
   const t = useTheme();
-  const { compact, gutter, headerHeight } = useLayout();
+  const { bp, compact, gutter, headerHeight } = useLayout();
   const button = compact ? 38 : metric.headerButton;
+  // A tablet held upright fits the tabs, but not at the design's padding.
+  const tight = bp === 'medium';
   const page = useAppStore((s) => s.page);
   const setPage = useAppStore((s) => s.setPage);
   const light = useAppStore((s) => s.light);
@@ -72,8 +74,8 @@ export const Header = React.memo(function Header({
               accessibilityState={{ selected: active }}
               onPress={pick(i)}
               style={{
-                paddingHorizontal: 22,
-                paddingVertical: 13,
+                paddingHorizontal: tight ? 14 : 22,
+                paddingVertical: tight ? 11 : 13,
                 borderRadius: radius.pill,
                 backgroundColor: active ? t.invBg : 'transparent',
               }}
@@ -114,7 +116,7 @@ export const Header = React.memo(function Header({
           accessibilityLabel="Toggle light mode"
           onPress={toggleTheme}
         />
-        <View style={{ display: compact ? 'none' : 'flex' }}>
+        <View style={{ display: bp === 'wide' ? 'flex' : 'none' }}>
           <RoundButton
             icon="bell"
             size={button}

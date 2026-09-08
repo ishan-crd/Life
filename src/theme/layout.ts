@@ -14,6 +14,11 @@ export interface Layout {
   bp: Breakpoint;
   /** Phone-sized, in either orientation. */
   compact: boolean;
+  /**
+   * Too narrow for a page's side pane: every phone, and a tablet held
+   * upright. Pages stack here; `compact` is for what only a phone needs.
+   */
+  narrow: boolean;
   landscape: boolean;
   /**
    * Columns in the home-page widget grid. It stops at three because that is
@@ -34,8 +39,9 @@ export interface Layout {
   /** Margin and corner radius of the dashboard shell — 0 on phones, full bleed. */
   shellInset: number;
   shellRadius: number;
-  /** Height of one widget row. */
+  /** Height of one widget row, and the least it may shrink to before the page scrolls. */
   rowHeight: number;
+  minRowHeight: number;
   /** Width of a page's detail column, or null when it should stack instead. */
   sideColumn: number | null;
 }
@@ -48,13 +54,15 @@ export function resolveLayout(width: number, height: number): Layout {
   const compact = Math.min(width, height) < PHONE_SHORT_EDGE || width < PHONE_WIDTH;
   const bp: Breakpoint = compact ? 'compact' : width < 1000 ? 'medium' : 'wide';
   const wide = bp === 'wide';
+  const landscape = width > height;
 
   return {
     width,
     height,
     bp,
     compact,
-    landscape: width > height,
+    narrow: compact || (bp === 'medium' && !landscape),
+    landscape,
     columns: compact ? 1 : width < 900 ? 2 : 3,
     noteColumns: compact ? 1 : bp === 'medium' ? 2 : width < 1300 ? 3 : 4,
     gutter: compact ? 16 : wide ? 26 : 22,
@@ -65,6 +73,7 @@ export function resolveLayout(width: number, height: number): Layout {
     shellInset: compact ? 0 : 12,
     shellRadius: compact ? 0 : 22,
     rowHeight: compact ? 96 : wide ? 118 : 108,
+    minRowHeight: compact ? 96 : 78,
     sideColumn: compact ? null : wide ? 348 : 292,
   };
 }

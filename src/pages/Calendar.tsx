@@ -32,7 +32,7 @@ const COLOR_OPTIONS = [
 
 export function Calendar() {
   const t = useTheme();
-  const { compact, gutter, gap, cardPad, sideColumn } = useLayout();
+  const { compact, narrow, gutter, gap, cardPad, sideColumn } = useLayout();
   const now = useNow(60_000);
   const { openSheet } = useSheet();
 
@@ -173,14 +173,14 @@ export function Calendar() {
           paddingTop: compact ? 14 : 20,
         }}
       >
-        <Panes>
+        <Panes stack={narrow}>
         <View
           style={{
-            flex: compact ? undefined : 1,
+            flex: narrow ? undefined : 1,
             minWidth: 0,
             // Inside a stack the grid has no flex parent to fill, so it takes
             // the height five rows of day cells actually need.
-            height: compact ? 320 : undefined,
+            height: narrow ? (compact ? 320 : 400) : undefined,
             padding: cardPad,
             borderRadius: radius.card,
             backgroundColor: t.card,
@@ -234,7 +234,7 @@ export function Calendar() {
                         >
                           {cell.inMonth ? String(cell.dayNum) : ''}
                         </Txt>
-                        {cell.grams > 0 ? (
+                        {cell.grams > 0 && !narrow ? (
                           <Txt
                             size={11}
                             weight="semibold"
@@ -266,13 +266,13 @@ export function Calendar() {
           </View>
         </View>
 
-        <View style={{ width: sideColumn ?? '100%', gap }}>
+        <View style={{ width: narrow ? '100%' : sideColumn ?? '100%', gap }}>
           <View
             style={{
-              flex: compact ? undefined : 1,
+              flex: narrow ? undefined : 1,
               // A stacked card has no flex parent, so the events list needs a
               // height of its own to scroll inside.
-              height: compact ? 360 : undefined,
+              height: narrow ? 380 : undefined,
               minHeight: 0,
               padding: cardPad,
               borderRadius: radius.card,

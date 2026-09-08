@@ -40,7 +40,9 @@ function dotForTag(tag: string): string {
 
 export function Board() {
   const t = useTheme();
-  const { compact, gutter, cardPad } = useLayout();
+  const { compact, width, gap, gutter, cardPad } = useLayout();
+  /** Three columns and the ritual list need a wide row; short of it, the list drops beneath. */
+  const twoRow = !compact && width < 1100;
   const { openSheet } = useSheet();
   const columns = useAppStore((s) => s.columns);
   const tasks = useAppStore((s) => s.tasks);
@@ -206,7 +208,9 @@ export function Board() {
           paddingTop: compact ? 14 : 20,
         }}
       >
-        <Panes onScroll={remeasureColumns}>
+        {twoRow ? (
+          <View style={{ flex: 1, gap, paddingBottom: 30 }}>
+            <View style={{ flex: 1, flexDirection: 'row', gap }}>
         {columns.map((col) => {
           const active = over === col.key && dragCard?.from !== col.key && !!dragCard;
           return (
@@ -286,10 +290,11 @@ export function Board() {
             </View>
           );
         })}
-
+            </View>
         <View
           style={{
-            width: compact ? '100%' : 320,
+            width: twoRow || compact ? '100%' : 320,
+            height: twoRow ? 260 : undefined,
             padding: cardPad,
             borderRadius: radius.card,
             backgroundColor: t.card,
@@ -374,7 +379,178 @@ export function Board() {
             </Touchable>
           </CardColumnList>
         </View>
-        </Panes>
+          </View>
+        ) : (
+          <Panes onScroll={remeasureColumns}>
+        {columns.map((col) => {
+          const active = over === col.key && dragCard?.from !== col.key && !!dragCard;
+          return (
+            <View
+              key={col.key}
+              ref={(node) => {
+                columnRefs.current[col.key] = node;
+              }}
+              onLayout={onColumnLayout(col.key)}
+              style={{
+                flex: compact ? undefined : 1,
+                minWidth: 0,
+                padding: cardPad,
+                borderRadius: radius.card,
+                borderWidth: active ? 2 : 1,
+                borderColor: active ? accent.purple : t.line,
+                backgroundColor: active ? t.boardColActiveBg : t.boardColBg,
+                transform: [{ scale: active ? 1.008 : 1 }],
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: col.dot }} />
+                <Txt size={17} weight="medium" tracking={-0.02} style={{ flex: 1 }}>
+                  {col.title}
+                </Txt>
+                <View
+                  style={{
+                    paddingHorizontal: 11,
+                    paddingVertical: 4,
+                    borderRadius: radius.pill,
+                    backgroundColor: t.pill,
+                    borderWidth: 1,
+                    borderColor: t.pillLine,
+                  }}
+                >
+                  <Txt size={13} weight="semibold" color={t.inkSoft}>
+                    {col.cards.length}
+                  </Txt>
+                </View>
+              </View>
+
+              <CardColumnList compact={compact}>
+                {col.cards.map((card) => (
+                  <DraggableCard
+                    key={card.id}
+                    card={card}
+                    columnKey={col.key}
+                    dimmed={dragCard?.card.id === card.id}
+                    framesSV={framesSV}
+                    dragX={dragX}
+                    dragY={dragY}
+                    dragW={dragW}
+                    dragActive={dragActive}
+                    overSV={overSV}
+                    onBegin={beginDrag}
+                    onEnd={endDrag}
+                    onPress={() => openCardSheet(col.key, card)}
+                  />
+                ))}
+                <Touchable
+                  onPress={() => openCardSheet(col.key)}
+                  activeScale={0.98}
+                  style={{
+                    padding: 12,
+                    borderRadius: radius.cell,
+                    borderWidth: 1,
+                    borderStyle: 'dashed',
+                    borderColor: t.btnLineDash,
+                    alignItems: 'center',
+                  }}
+                >
+                  <Txt size={13} color={t.muted2}>
+                    + Add card
+                  </Txt>
+                </Touchable>
+              </CardColumnList>
+            </View>
+          );
+        })}
+        <View
+          style={{
+            width: twoRow || compact ? '100%' : 320,
+            height: twoRow ? 260 : undefined,
+            padding: cardPad,
+            borderRadius: radius.card,
+            backgroundColor: t.card,
+            borderWidth: 1,
+            borderColor: t.line,
+          }}
+        >
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: 14,
+            }}
+          >
+            <View>
+              <Txt size={17} weight="medium" tracking={-0.02}>
+                Every day
+              </Txt>
+              <Txt size={13} color={t.muted2} style={{ marginTop: 3 }}>
+                {doneTasks} of {tasks.length} kept
+              </Txt>
+            </View>
+            <ProgressRing
+              progress={taskPct}
+              color={accent.purple}
+              label={`${Math.round(taskPct * 100)}%`}
+            />
+          </View>
+          <CardColumnList compact={compact} style={{ marginHorizontal: -8 }}>
+            {tasks.map((task) => (
+              <Touchable
+                key={task.id}
+                onPress={() => toggleTask(task.id)}
+                onLongPress={() => openTaskSheet(task)}
+                activeScale={0.99}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 12,
+                  paddingVertical: 11,
+                  paddingHorizontal: 8,
+                  borderRadius: radius.cell,
+                }}
+              >
+                <Checkbox checked={task.done} />
+                <View
+                  style={{ flex: 1, minWidth: 0, opacity: task.done && t.name === 'dark' ? 0.42 : 1 }}
+                >
+                  <Txt
+                    size={14}
+                    weight="medium"
+                    tracking={-0.01}
+                    color={task.done && t.name === 'light' ? t.muted : t.ink}
+                    style={task.done ? { textDecorationLine: 'line-through' } : undefined}
+                  >
+                    {task.label}
+                  </Txt>
+                  <Txt size={12} color={t.muted2} style={{ marginTop: 2 }}>
+                    {task.meta}
+                  </Txt>
+                </View>
+              </Touchable>
+            ))}
+            <Touchable
+              onPress={() => openTaskSheet()}
+              activeScale={0.98}
+              style={{
+                marginTop: 6,
+                marginHorizontal: 8,
+                padding: 12,
+                borderRadius: radius.cell,
+                borderWidth: 1,
+                borderStyle: 'dashed',
+                borderColor: t.btnLineDash,
+                alignItems: 'center',
+              }}
+            >
+              <Txt size={13} color={t.muted2}>
+                + Add ritual
+              </Txt>
+            </Touchable>
+          </CardColumnList>
+        </View>
+          </Panes>
+        )}
 
         {dragCard ? (
           <Animated.View
