@@ -16,12 +16,17 @@ import { CURVE, DURATION } from '@/theme';
 const SNAP_THRESHOLD = 90;
 /** Resistance applied when dragging past the first or last page. */
 const RUBBER = 0.28;
+/** Velocity, in px/s, above which a short swipe still counts as a fling. */
+const FLING_VELOCITY = 700;
 /**
- * A trackpad swipe has no "finger lifted" moment — macOS keeps sending
- * momentum deltas after the fingers leave. This is how long the wheel has to
- * stay quiet before the gesture counts as over.
+ * A trackpad swipe has no "fingers lifted" moment — the browser only ever
+ * says "moved". macOS keeps sending decaying momentum deltas for up to a
+ * second after the fingers leave, spaced well under this; when the wheel has
+ * been quiet this long, the swipe is over.
  */
-const WHEEL_IDLE_MS = 90;
+const WHEEL_IDLE_MS = 80;
+/** Firefox reports some wheels in lines rather than pixels; this is one line. */
+const LINE_PX = 16;
 
 interface PagerContextValue {
   /** Continuous page position (e.g. 1.4 mid-swipe) for parallax + dots. */
@@ -65,9 +70,12 @@ export function Pager({
   const pan = useMemo(
     () =>
       Gesture.Pan()
-        // A two-finger trackpad swipe on a Mac or an iPad with a Magic
-        // Keyboard arrives as an indirect pan; without this it is ignored.
-        .enableTrackpadTwoFingerGesture(true)
+        // On iPadOS and Catalyst a two-finger trackpad swipe arrives as an
+        // indirect pan with real begin/end phases, so the touch physics apply
+        // as they are. The web gives no such phases — gesture-handler's own
+        // wheel emulation reads natural scrolling inverted and ends the
+        // gesture after 30ms of quiet — so there the wheel is handled below.
+        .enableTrackpadTwoFingerGesture(Platform.OS !== 'web')
         .activeOffsetX([-14, 14])
         .failOffsetY([-18, 18])
         .onUpdate((e) => {
@@ -94,10 +102,14 @@ export function Pager({
   );
 
   /**
-   * The same swipe on a trackpad in the browser. A wheel event is all the web
-   * gives us — there is no gesture to hand to the pan — so the accumulated
-   * horizontal delta drives the track directly, snapping at the same 90px the
-   * touch gesture uses.
+   * The same swipe from a trackpad in the browser.
+   *
+   * The track follows the accumulated horizontal delta one-to-one — exactly
+   * what the touch pan does with the finger — and nothing is decided until the
+   * wheel goes quiet. Only then does the swipe snap, by the same rule as a
+   * lifted finger: past 90px, or flung. Momentum cannot run ahead because the
+   * offset is capped at one page, so a hard swipe slides fully across and
+   * stays there until the momentum dies, then commits.
    */
   useEffect(() => {
     if (Platform.OS !== 'web') return;
@@ -105,48 +117,63 @@ export function Pager({
     if (!node?.addEventListener) return;
 
     let offset = 0;
-    /** Set once a swipe has committed, to swallow the momentum tail behind it. */
-    let spent = false;
+    let velocity = 0;
+    let lastTime = 0;
+    let active = false;
     let idle: ReturnType<typeof setTimeout> | undefined;
 
-    const settle = () => {
-      offset = 0;
-      spent = false;
-      translateX.value = withTiming(-pageSV.value * width, {
-        duration: DURATION.page,
-        easing: CURVE.settle,
-      });
-    };
+    /** Past the first or last page the track gives, but only a fraction. */
+    const shownFor = (p: number, raw: number) =>
+      (p === 0 && raw > 0) || (p === PAGE_COUNT - 1 && raw < 0) ? raw * RUBBER : raw;
 
-    const onWheel = (e: WheelEvent) => {
-      // Vertical intent belongs to whatever the cursor is over.
-      if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
-      // Otherwise the browser takes a horizontal swipe as back/forward.
-      e.preventDefault();
-
-      if (idle) clearTimeout(idle);
-      idle = setTimeout(settle, WHEEL_IDLE_MS);
-      if (spent) return;
-
+    const finish = () => {
       const p = pageSV.value;
-      offset -= e.deltaX;
-      const atEnd = (p === 0 && offset > 0) || (p === PAGE_COUNT - 1 && offset < 0);
-      const shown = atEnd ? offset * RUBBER : offset;
-      translateX.value = -p * width + shown;
+      const shown = shownFor(p, offset);
+      const flung = Math.abs(velocity) > FLING_VELOCITY;
+      let next = p;
+      if (shown < -SNAP_THRESHOLD || (flung && velocity < 0)) next = Math.min(PAGE_COUNT - 1, p + 1);
+      else if (shown > SNAP_THRESHOLD || (flung && velocity > 0)) next = Math.max(0, p - 1);
 
-      if (Math.abs(shown) <= SNAP_THRESHOLD) return;
-      const next = shown < 0 ? Math.min(PAGE_COUNT - 1, p + 1) : Math.max(0, p - 1);
-      if (next === p) return;
-      // Commit as soon as the threshold is crossed — a trackpad never tells us
-      // the fingers lifted, so waiting for that would feel late.
-      spent = true;
       offset = 0;
+      velocity = 0;
+      active = false;
       pageSV.value = next;
       translateX.value = withTiming(-next * width, {
         duration: DURATION.page,
         easing: CURVE.settle,
       });
-      setPage(next);
+      if (next !== p) setPage(next);
+    };
+
+    const onWheel = (e: WheelEvent) => {
+      const scale = e.deltaMode === 1 ? LINE_PX : 1;
+      const dx = e.deltaX * scale;
+      const dy = e.deltaY * scale;
+      // Until a swipe is under way, vertical intent belongs to whatever the
+      // cursor is over. Once it is, every event is part of it.
+      if (!active && Math.abs(dx) <= Math.abs(dy)) return;
+      // Otherwise the browser reads a horizontal swipe as back/forward.
+      e.preventDefault();
+
+      const now = e.timeStamp;
+      const dt = active ? Math.max(1, now - lastTime) : 16;
+      lastTime = now;
+
+      // Natural scrolling: fingers moving left push the content left, which is
+      // a positive deltaX and a negative translation, the same as a finger.
+      const step = -dx;
+      offset = Math.max(-width, Math.min(width, offset + step));
+      // Velocity is smoothed so one uneven delta cannot decide the fling, but
+      // seeded from the first sample so a short, quick flick is not averaged
+      // down from zero and lost.
+      const sample = (step / dt) * 1000;
+      velocity = active ? velocity * 0.5 + sample * 0.5 : sample;
+      active = true;
+
+      translateX.value = -pageSV.value * width + shownFor(pageSV.value, offset);
+
+      if (idle) clearTimeout(idle);
+      idle = setTimeout(finish, WHEEL_IDLE_MS);
     };
 
     node.addEventListener('wheel', onWheel, { passive: false });
