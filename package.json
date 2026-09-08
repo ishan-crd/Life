@@ -13,7 +13,7 @@
     "expo-linear-gradient": "~57.0.1",
     "expo-splash-screen": "~57.0.8",
     "expo-status-bar": "~57.0.1",
-    "insyd-bottom-sheet": "github:ishan-crd/insyd-bottom-sheet#1a1e04a5bd11789326138e67aa22c3fbb540fb21",
+    "insyd-bottom-sheet": "^0.5.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",
     "react-native": "0.86.3",
