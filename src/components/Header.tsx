@@ -1,21 +1,29 @@
 import React, { useCallback } from 'react';
-import { View } from 'react-native';
+import { View, type LayoutChangeEvent } from 'react-native';
+import Animated, { interpolateColor, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { firstName, useProfileStore } from '@/state/profile';
 import { PAGE_TITLES, useAppStore } from '@/state/store';
 import { ConicDisc } from './ConicDisc';
-import { RoundButton, Txt } from './ui';
+import { pagerPosition } from './Pager';
+import { FONT, RoundButton, Txt } from './ui';
 import { Touchable } from './Touchable';
 import {
   accent,
   BRAND_STOPS,
   onAccent,
   radius,
+  scaleType,
   size as metric,
   tracking,
   useLayout,
   useTheme,
   type as typeScale,
 } from '@/theme';
+
+interface TabFrame {
+  x: number;
+  w: number;
+}
 
 interface HeaderProps {
   onSearch(): void;
@@ -36,14 +44,44 @@ export const Header = React.memo(function Header({
   const button = compact ? 38 : metric.headerButton;
   // A tablet held upright fits the tabs, but not at the design's padding.
   const tight = bp === 'medium';
-  const page = useAppStore((s) => s.page);
   const setPage = useAppStore((s) => s.setPage);
+  /** Where each tab sits, so the highlight can slide between them. */
+  const frames = useSharedValue<TabFrame[]>([]);
   const light = useAppStore((s) => s.light);
   const toggleTheme = useAppStore((s) => s.toggleTheme);
   const profile = useProfileStore((s) => s.profile);
   const initial = firstName(profile).charAt(0).toUpperCase();
 
   const pick = useCallback((i: number) => () => setPage(i), [setPage]);
+
+  const onTabLayout = useCallback(
+    (i: number) => (e: LayoutChangeEvent) => {
+      const { x, width } = e.nativeEvent.layout;
+      const next = [...frames.value];
+      next[i] = { x, w: width };
+      frames.value = next;
+    },
+    [frames]
+  );
+
+  /**
+   * The highlight is one pill that tracks the pager's live position, so it
+   * moves with the swipe rather than jumping to the tab when the swipe lands.
+   */
+  const pillStyle = useAnimatedStyle(() => {
+    const f = frames.value;
+    const count = PAGE_TITLES.length;
+    for (let i = 0; i < count; i += 1) if (!f[i]) return { opacity: 0 };
+    const pos = Math.max(0, Math.min(count - 1, pagerPosition.value));
+    const i = Math.floor(pos);
+    const j = Math.min(count - 1, i + 1);
+    const k = pos - i;
+    return {
+      opacity: 1,
+      width: f[i].w + (f[j].w - f[i].w) * k,
+      transform: [{ translateX: f[i].x + (f[j].x - f[i].x) * k }],
+    };
+  });
 
   return (
     <View
@@ -65,27 +103,30 @@ export const Header = React.memo(function Header({
       </View>
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, display: compact ? 'none' : 'flex' }}>
-        {PAGE_TITLES.map((label, i) => {
-          const active = page === i;
-          return (
-            <Touchable
-              key={label}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: active }}
-              onPress={pick(i)}
-              style={{
-                paddingHorizontal: tight ? 14 : 22,
-                paddingVertical: tight ? 11 : 13,
-                borderRadius: radius.pill,
-                backgroundColor: active ? t.invBg : 'transparent',
-              }}
-            >
-              <Txt size={typeScale.body} weight="medium" color={active ? t.invInk : t.muted}>
-                {label}
-              </Txt>
-            </Touchable>
-          );
-        })}
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            {
+              position: 'absolute',
+              top: 0,
+              bottom: 0,
+              left: 0,
+              borderRadius: radius.pill,
+              backgroundColor: t.invBg,
+            },
+            pillStyle,
+          ]}
+        />
+        {PAGE_TITLES.map((label, i) => (
+          <Tab
+            key={label}
+            index={i}
+            label={label}
+            tight={tight}
+            onLayout={onTabLayout(i)}
+            onPress={pick(i)}
+          />
+        ))}
       </View>
 
       <View
@@ -169,3 +210,48 @@ export const Header = React.memo(function Header({
     </View>
   );
 });
+
+/**
+ * One page tab. Its ink fades between the highlight's and the muted colour
+ * with the same live position the pill follows, so the label never lags the
+ * pill it is sitting on.
+ */
+function Tab({
+  index,
+  label,
+  tight,
+  onLayout,
+  onPress,
+}: {
+  index: number;
+  label: string;
+  tight: boolean;
+  onLayout(e: LayoutChangeEvent): void;
+  onPress(): void;
+}) {
+  const t = useTheme();
+  const { fontScale } = useLayout();
+  const ink = useAnimatedStyle(() => {
+    const distance = Math.min(1, Math.abs(pagerPosition.value - index));
+    return { color: interpolateColor(distance, [0, 1], [t.invInk, t.muted]) };
+  }, [index, t.invInk, t.muted]);
+
+  return (
+    <Touchable
+      accessibilityRole="tab"
+      onLayout={onLayout}
+      onPress={onPress}
+      style={{
+        paddingHorizontal: tight ? 14 : 22,
+        paddingVertical: tight ? 11 : 13,
+        borderRadius: radius.pill,
+      }}
+    >
+      <Animated.Text
+        style={[{ fontFamily: FONT.medium, fontSize: scaleType(typeScale.body, fontScale) }, ink]}
+      >
+        {label}
+      </Animated.Text>
+    </Touchable>
+  );
+}

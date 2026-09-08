@@ -2,9 +2,10 @@ import React, { createContext, useContext, useEffect, useMemo, useRef } from 're
 import { Platform, View } from 'react-native';
 import { Gesture, GestureDetector, type GestureType } from 'react-native-gesture-handler';
 import Animated, {
+  makeMutable,
   runOnJS,
+  useAnimatedReaction,
   useAnimatedStyle,
-  useDerivedValue,
   useSharedValue,
   withTiming,
   type SharedValue,
@@ -27,6 +28,14 @@ const FLING_VELOCITY = 700;
 const WHEEL_IDLE_MS = 80;
 /** Firefox reports some wheels in lines rather than pixels; this is one line. */
 const LINE_PX = 16;
+
+/**
+ * Continuous page position — 1.4 means a swipe is 40% of the way from the
+ * board to the calendar. It lives at module level so the header, which sits
+ * outside the pager, can slide its tab highlight with the swipe the way the
+ * page dots do, rather than jumping when the swipe commits.
+ */
+export const pagerPosition = makeMutable(0);
 
 interface PagerContextValue {
   /** Continuous page position (e.g. 1.4 mid-swipe) for parallax + dots. */
@@ -183,13 +192,19 @@ export function Pager({
     };
   }, [width, setPage, pageSV, translateX]);
 
-  const position = useDerivedValue(() => -translateX.value / width, [width]);
+  useAnimatedReaction(
+    () => -translateX.value / width,
+    (value) => {
+      pagerPosition.value = value;
+    },
+    [width]
+  );
 
   const trackStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: translateX.value }],
   }));
 
-  const ctx = useMemo<PagerContextValue>(() => ({ position, panRef: pan }), [position, pan]);
+  const ctx = useMemo<PagerContextValue>(() => ({ position: pagerPosition, panRef: pan }), [pan]);
 
   return (
     <PagerContext.Provider value={ctx}>
